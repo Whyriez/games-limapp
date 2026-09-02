@@ -1,0 +1,252 @@
+[
+  {
+    "word": "Kucing",
+    "category": "Hewan",
+    "difficulty": "Mudah"
+  },
+  {
+    "word": "Gajah",
+    "category": "Hewan",
+    "difficulty": "Mudah"
+  },
+  {
+    "word": "Kupu-kupu",
+    "category": "Hewan",
+    "difficulty": "Mudah"
+  },
+  {
+    "word": "Ikan Hiu",
+    "category": "Hewan",
+    "difficulty": "Sedang"
+  },
+  {
+    "word": "Jerapah",
+    "category": "Hewan",
+    "difficulty": "Sedang"
+  },
+  {
+    "word": "Lumba-lumba",
+    "category": "Hewan",
+    "difficulty": "Sedang"
+  },
+  {
+    "word": "Burung Hantu",
+    "category": "Hewan",
+    "difficulty": "Sedang"
+  },
+  {
+    "word": "Pinguin",
+    "category": "Hewan",
+    "difficulty": "Mudah"
+  },
+  {
+    "word": "Kelinci",
+    "category": "Hewan",
+    "difficulty": "Mudah"
+  },
+  {
+    "word": "Pohon Kelapa",
+    "category": "Alam",
+    "difficulty": "Mudah"
+  },
+  {
+    "word": "Gunung Berapi",
+    "category": "Alam",
+    "difficulty": "Mudah"
+  },
+  {
+    "word": "Pelangi",
+    "category": "Alam",
+    "difficulty": "Mudah"
+  },
+  {
+    "word": "Matahari Terbenam",
+    "category": "Alam",
+    "difficulty": "Sedang"
+  },
+  {
+    "word": "Air Terjun",
+    "category": "Alam",
+    "difficulty": "Sedang"
+  },
+  {
+    "word": "Api Unggun",
+    "category": "Alam",
+    "difficulty": "Mudah"
+  },
+  {
+    "word": "Pizza",
+    "category": "Makanan",
+    "difficulty": "Mudah"
+  },
+  {
+    "word": "Es Krim",
+    "category": "Makanan",
+    "difficulty": "Mudah"
+  },
+  {
+    "word": "Burger",
+    "category": "Makanan",
+    "difficulty": "Mudah"
+  },
+  {
+    "word": "Semangka",
+    "category": "Makanan",
+    "difficulty": "Mudah"
+  },
+  {
+    "word": "Donat Cokelat",
+    "category": "Makanan",
+    "difficulty": "Mudah"
+  },
+  {
+    "word": "Sate Ayam",
+    "category": "Makanan",
+    "difficulty": "Sedang"
+  },
+  {
+    "word": "Nasi Tumpeng",
+    "category": "Makanan",
+    "difficulty": "Sedang"
+  },
+  {
+    "word": "Mobil Balap",
+    "category": "Transportasi",
+    "difficulty": "Mudah"
+  },
+  {
+    "word": "Pesawat Terbang",
+    "category": "Transportasi",
+    "difficulty": "Mudah"
+  },
+  {
+    "word": "Sepeda Ontel",
+    "category": "Transportasi",
+    "difficulty": "Mudah"
+  },
+  {
+    "word": "Helikopter",
+    "category": "Transportasi",
+    "difficulty": "Sedang"
+  },
+  {
+    "word": "Kapal Selam",
+    "category": "Transportasi",
+    "difficulty": "Sedang"
+  },
+  {
+    "word": "Roket Antariksa",
+    "category": "Transportasi",
+    "difficulty": "Sedang"
+  },
+  {
+    "word": "Gitar Listrik",
+    "category": "Benda",
+    "difficulty": "Mudah"
+  },
+  {
+    "word": "Kamera Foto",
+    "category": "Benda",
+    "difficulty": "Mudah"
+  },
+  {
+    "word": "Kacamata Hitam",
+    "category": "Benda",
+    "difficulty": "Mudah"
+  },
+  {
+    "word": "Jam Dinding",
+    "category": "Benda",
+    "difficulty": "Mudah"
+  },
+  {
+    "word": "Payung Hujan",
+    "category": "Benda",
+    "difficulty": "Mudah"
+  },
+  {
+    "word": "Mahkota Raja",
+    "category": "Benda",
+    "difficulty": "Sedang"
+  },
+  {
+    "word": "Pedang Samurai",
+    "category": "Benda",
+    "difficulty": "Sedang"
+  },
+  {
+    "word": "Rumah Hantu",
+    "category": "Tempat",
+    "difficulty": "Sedang"
+  },
+  {
+    "word": "Monas",
+    "category": "Tempat",
+    "difficulty": "Mudah"
+  },
+  {
+    "word": "Piramida",
+    "category": "Tempat",
+    "difficulty": "Mudah"
+  },
+  {
+    "word": "Candi Borobudur",
+    "category": "Tempat",
+    "difficulty": "Sedang"
+  },
+  {
+    "word": "Kastil Kerajaan",
+    "category": "Tempat",
+    "difficulty": "Sedang"
+  },
+  {
+    "word": "Dokter Gigi",
+    "category": "Profesi",
+    "difficulty": "Sedang"
+  },
+  {
+    "word": "Astronot",
+    "category": "Profesi",
+    "difficulty": "Mudah"
+  },
+  {
+    "word": "Polisi",
+    "category": "Profesi",
+    "difficulty": "Mudah"
+  },
+  {
+    "word": "Chef Koki",
+    "category": "Profesi",
+    "difficulty": "Mudah"
+  },
+  {
+    "word": "Pemadam Kebakaran",
+    "category": "Profesi",
+    "difficulty": "Sedang"
+  },
+  {
+    "word": "Kura-kura",
+    "category": "Hewan",
+    "difficulty": "Mudah"
+  },
+  {
+    "word": "Nasi Goreng",
+    "category": "Makanan",
+    "difficulty": "Mudah"
+  },
+  {
+    "word": "Sikat Gigi",
+    "category": "Benda Sehari-hari",
+    "difficulty": "Mudah"
+  },
+  {
+    "word": "Sepeda Motor",
+    "category": "Transportasi",
+    "difficulty": "Mudah"
+  },
+  {
+    "word": "Payung",
+    "category": "Benda Sehari-hari",
+    "difficulty": "Mudah"
+  }
+]

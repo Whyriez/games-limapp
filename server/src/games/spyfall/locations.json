@@ -1,0 +1,329 @@
+[
+  {
+    "id": "pesawat",
+    "name": "Pesawat Terbang",
+    "category": "Transportasi",
+    "roles": [
+      "Kapten Pilot",
+      "Pramugari Senior",
+      "Penumpang VIP First Class",
+      "Petugas Keamanan Udara",
+      "Penumpang Mabuk Udara",
+      "Kopilot",
+      "Pramugara"
+    ]
+  },
+  {
+    "id": "kapal_selam",
+    "name": "Kapal Selam Militer",
+    "category": "Militer & Laut",
+    "roles": [
+      "Komandan Kapal",
+      "Operator Sonar",
+      "Teknisi Torpedo",
+      "Koki Kapal Selam",
+      "Perwira Navigator",
+      "Dokter Militer"
+    ]
+  },
+  {
+    "id": "rumah_sakit",
+    "name": "Rumah Sakit Umum",
+    "category": "Kesehatan",
+    "roles": [
+      "Dokter Bedah",
+      "Kepala Perawat",
+      "Pasien Rawat Inap",
+      "Dokter Magang",
+      "Petugas Farmasi",
+      "Satpam IGD",
+      "Pengunjung Pasien"
+    ]
+  },
+  {
+    "id": "hotel_bintang_5",
+    "name": "Hotel Bintang 5",
+    "category": "Pariwisata",
+    "roles": [
+      "Manajer Resepsionis",
+      "Bellboy Ramah",
+      "Tamu Sultan VIP",
+      "Petugas Housekeeping",
+      "Chef Restoran Hotel",
+      "Satpam Lobi"
+    ]
+  },
+  {
+    "id": "bank_sentral",
+    "name": "Bank Sentral & Brankas",
+    "category": "Finansial",
+    "roles": [
+      "Kepala Cabang Bank",
+      "Teller Cekatan",
+      "Nasabah Prioritas",
+      "Petugas Kunci Brankas",
+      "Satpam Bersenjata",
+      "Konsultan Investasi"
+    ]
+  },
+  {
+    "id": "stasiun_antariksa",
+    "name": "Stasiun Luar Angkasa (ISS)",
+    "category": "Sains & Fiksi",
+    "roles": [
+      "Komandan Misi",
+      "Ilmuwan Astrofisika",
+      "Spesialis Robotik",
+      "Insinyur Oksigen",
+      "Dokter Antariksa",
+      "Astronot Baru"
+    ]
+  },
+  {
+    "id": "restoran_mewah",
+    "name": "Restoran Fine Dining",
+    "category": "Kuliner",
+    "roles": [
+      "Head Chef Bintang Michelin",
+      "Pelayan Berdasi",
+      "Kritikus Kuliner Terkenal",
+      "Sommelier Minuman",
+      "Pelanggan Romantic Dinner",
+      "Pencuci Piring"
+    ]
+  },
+  {
+    "id": "kantor_startup",
+    "name": "Kantor Startup Unicorn",
+    "category": "Teknologi & Kerja",
+    "roles": [
+      "CEO Ambisius",
+      "Lead Software Engineer",
+      "Product Manager Stres",
+      "UI/UX Designer",
+      "HRD Rekrutmen",
+      "Anak Magang Lembur"
+    ]
+  },
+  {
+    "id": "bioskop",
+    "name": "Bioskop XXI",
+    "category": "Hiburan",
+    "roles": [
+      "Penjaga Pintu Teater",
+      "Penjual Popcorn & Minuman",
+      "Operator Proyektor",
+      "Penonton Pacaran di Pojok",
+      "Penonton Telat Masuk",
+      "Manager Bioskop"
+    ]
+  },
+  {
+    "id": "pantai_bali",
+    "name": "Pantai Kuta Bali",
+    "category": "Pariwisata",
+    "roles": [
+      "Instruktur Selancar",
+      "Lifeguard / Penjaga Pantai",
+      "Turis Bule Berjemur",
+      "Penjual Kelapa Muda",
+      "Fotografer Sunset",
+      "Penyewa Payung Pantai"
+    ]
+  },
+  {
+    "id": "sekolah",
+    "name": "Gedung Sekolah / SMA",
+    "category": "Edukasi",
+    "roles": [
+      "Guru Killer Matematika",
+      "Ketua OSIS Teladan",
+      "Murid Suka Tidur di Kelas",
+      "Ibu Kantin Legendaris",
+      "Guru BK Konseling",
+      "Satpam Gerbang Sekolah"
+    ]
+  },
+  {
+    "id": "pesta_pernikahan",
+    "name": "Pesta Pernikahan Mewah",
+    "category": "Acara & Sosial",
+    "roles": [
+      "Pengantin Pria/Wanita",
+      "MC Acara Heboh",
+      "Fotografer Wedding",
+      "Tamu Khusus Prasmanan",
+      "Pagar Ayu / Bridesmaid",
+      "Penyanyi Band Hiburan"
+    ]
+  },
+  {
+    "id": "stasiun_kereta",
+    "name": "Stasiun Kereta Cepat",
+    "category": "Transportasi",
+    "roles": [
+      "Masinis Kereta",
+      "Petugas Pengecek Tiket",
+      "Penumpang Buru-buru",
+      "Porter Pembawa Koper",
+      "Petugas Informasi",
+      "Penumpang Ketinggalan Kereta"
+    ]
+  },
+  {
+    "id": "kasino",
+    "name": "Kasino Mewah Las Vegas",
+    "category": "Hiburan & Malam",
+    "roles": [
+      "Dealer Poker / Blackjack",
+      "Pemain Judi Profesional",
+      "Manajer Keamanan CCTV",
+      "Bartender Koktail",
+      "Penyelidik Kecurangan",
+      "Tamu Kaya Kehilangan Duit"
+    ]
+  },
+  {
+    "id": "kapal_pesiar",
+    "name": "Kapal Pesiar Samudra",
+    "category": "Pariwisata",
+    "roles": [
+      "Kapten Kapal Pesiar",
+      "Direktur Hiburan Cruise",
+      "Tamu Wisatawan Santai",
+      "Instruktur Renang",
+      "Koki Buffet Internasional",
+      "Musisi Panggung"
+    ]
+  },
+  {
+    "id": "pasar_tradisional_mtiraggk",
+    "name": "Pasar Tradisional",
+    "category": "Tempat Umum",
+    "roles": [
+      "Pedagang Sayur",
+      "Pembeli Nawar",
+      "Tukang Angkut Barang",
+      "Penjual Ikan",
+      "Ibu-ibu Belanja",
+      "Pengelola Pasar"
+    ]
+  },
+  {
+    "id": "pabrik_tekstil_mtiraggk",
+    "name": "Pabrik Tekstil",
+    "category": "Industri",
+    "roles": [
+      "Operator Mesin Jahit",
+      "Supervisor Produksi",
+      "Karyawan QC",
+      "Desainer Pakaian",
+      "Teknisi Mesin",
+      "Buruh Pabrik"
+    ]
+  },
+  {
+    "id": "resort_pegunungan_mtiraggk",
+    "name": "Resort Pegunungan",
+    "category": "Pariwisata",
+    "roles": [
+      "Pemandu Trekking",
+      "Resepsionis Hotel",
+      "Koki Restoran",
+      "Tamu Menginap",
+      "Petugas Keamanan",
+      "Instruktur Yoga"
+    ]
+  },
+  {
+    "id": "kantor_notaris_mtiraggk",
+    "name": "Kantor Notaris",
+    "category": "Pekerjaan",
+    "roles": [
+      "Notaris Senior",
+      "Klien Mengurus Akta",
+      "Asisten Notaris",
+      "Petugas Administrasi",
+      "Kurir Dokumen",
+      "Saksi Penandatanganan"
+    ]
+  },
+  {
+    "id": "stasiun_kereta_api_mtiraggk",
+    "name": "Stasiun Kereta Api",
+    "category": "Transportasi",
+    "roles": [
+      "Masinis Kereta",
+      "Penumpang Menunggu",
+      "Petugas Loket Tiket",
+      "Kondektur",
+      "Porter Barang",
+      "Polsuska"
+    ]
+  },
+  {
+    "id": "taman_hiburan_air_mtiraggk",
+    "name": "Taman Hiburan Air",
+    "category": "Hiburan",
+    "roles": [
+      "Penjaga Seluncuran",
+      "Pengunjung Berenang",
+      "Petugas Kebersihan Kolam",
+      "Fotografer Atraksi",
+      "Penjual Tiket",
+      "Petugas P3K"
+    ]
+  },
+  {
+    "id": "studio_rekaman_musik_mtiraggk",
+    "name": "Studio Rekaman Musik",
+    "category": "Seni & Hiburan",
+    "roles": [
+      "Produser Musik",
+      "Penyanyi Rekaman",
+      "Teknisi Audio",
+      "Penulis Lagu",
+      "Musisi Pengiring",
+      "Manajer Artis"
+    ]
+  },
+  {
+    "id": "pusat_riset_antariksa_mtiraggk",
+    "name": "Pusat Riset Antariksa",
+    "category": "Sains",
+    "roles": [
+      "Ilmuwan Astrofisika",
+      "Insinyur Roket",
+      "Peneliti Data Satelit",
+      "Teknisi Laboratorium",
+      "Astronot Pelatihan",
+      "Direktur Pusat"
+    ]
+  },
+  {
+    "id": "bengkel_otomotif_besar_mtiraggk",
+    "name": "Bengkel Otomotif Besar",
+    "category": "Pekerjaan",
+    "roles": [
+      "Montir Kepala",
+      "Mekanik Mesin",
+      "Pelanggan Menunggu",
+      "Sales Spare Part",
+      "Teknisi Ban",
+      "Manajer Bengkel"
+    ]
+  },
+  {
+    "id": "gedung_dpr_mpr_mtiraggk",
+    "name": "Gedung DPR/MPR",
+    "category": "Pemerintahan",
+    "roles": [
+      "Anggota DPR",
+      "Staf Ahli",
+      "Jurnalis Peliput",
+      "Petugas Keamanan",
+      "Tamu Audiensi",
+      "Sekretaris Dewan"
+    ]
+  }
+]

@@ -1,0 +1,101 @@
+# ==========================================
+# Dependencies
+# ==========================================
+node_modules/
+*/node_modules/
+.pnp
+.pnp.js
+
+# ==========================================
+# Environment Variables & Secrets
+# ==========================================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+server/.env
+client/.env
+client/.env.local
+# Do not ignore .env.example files
+!.env.example
+!*.env.example
+
+# ==========================================
+# Production & Build Artifacts
+# ==========================================
+dist/
+dist-ssr/
+build/
+*.local
+
+# ==========================================
+# Database & Runtime Data
+# ==========================================
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+server/data/*.db
+server/data/*.sqlite
+
+# ==========================================
+# Logs & Debugging
+# ==========================================
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ==========================================
+# Testing & Coverage
+# ==========================================
+coverage/
+.nyc_output/
+
+# ==========================================
+# Cache & Temporary Files
+# ==========================================
+.cache/
+.temp/
+.tmp/
+.eslintcache
+.stylelintcache
+.parcel-cache
+.turbo/
+
+# ==========================================
+# Editor & IDE Files
+# ==========================================
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.swo
+*.swn
+.fleet/
+.zed/
+
+# ==========================================
+# Operating System Files
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+[Dd]esktop.ini

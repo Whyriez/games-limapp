@@ -1,0 +1,14 @@
+{
+  "name": "undercover-stealth",
+  "version": "1.0.0",
+  "description": "Undercover: Stealth Edition Social Deduction Game",
+  "type": "module",
+  "scripts": {
+    "start": "node start.js",
+    "dev": "node start.js",
+    "build": "cd client && npm run build"
+  },
+  "keywords": ["undercover", "game", "social-deduction", "realtime", "socketio", "react"],
+  "author": "",
+  "license": "ISC"
+}
