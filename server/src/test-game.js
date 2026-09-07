@@ -1,5 +1,6 @@
 import assert from "assert";
 import { GameManager, normalizeWord } from "./gameManager.js";
+import { getGameHandler } from "./games/registry.js";
 
 console.log("▶ Running Undercover Game Engine Tests (with Customizable Roles & Discussion Ready)...");
 
@@ -253,11 +254,11 @@ updatePlayerGameResult({
   mrWhiteGuessCorrect: false,
 });
 const lbBefore = getLeaderboard();
-assert.ok(lbBefore.length > 0, "Leaderboard should have stats");
+assert.ok((lbBefore.all || lbBefore).length > 0, "Leaderboard should have stats");
 
 resetLeaderboard();
 const lbAfter = getLeaderboard();
-assert.strictEqual(lbAfter.length, 0, "Leaderboard should be empty after reset");
+assert.strictEqual((lbAfter.all || lbAfter).length, 0, "Leaderboard should be empty after reset");
 console.log("✔ Leaderboard Update & Admin Reset passed");
 
 // 16. Test Auto Role Balancing Calculations
@@ -360,16 +361,17 @@ r8.votes = {
   s8_p4: "s8_p1",
   s8_p5: "s8_p1", // Player 1 (Civilian) has 3 votes -> eliminated!
 };
-gm.tallyVotes("ROOM8");
+const ucHandler = getGameHandler("undercover");
+ucHandler.tallyVotes(r8, mockIO, gm);
 
 // After p1 eliminated, 4 players remain (2 Civilians, 1 Undercover, 1 Mr. White)
 assert.strictEqual(p1.isAlive, false, "Player 1 must be dead");
 assert.strictEqual(r8.players.filter((p) => p.isAlive).length, 4, "Must have 4 alive players");
-const winRound1 = gm.evaluateWinCondition("ROOM8");
+const winRound1 = ucHandler.evaluateWinCondition(r8);
 assert.strictEqual(winRound1.gameOver, false, "Game must NOT end after 1 civilian elimination when 4 players remain");
 
 // Fast-forward to Round 2
-gm.prepareNextRound("ROOM8");
+ucHandler.prepareNextRound(r8, mockIO, gm);
 assert.strictEqual(r8.status, "CLUE_PHASE", "Must transition to CLUE_PHASE for Round 2");
 assert.strictEqual(r8.roundNumber, 2, "Round number must be 2");
 
@@ -381,20 +383,20 @@ r8.votes = {
   s8_p4: "s8_p2",
   s8_p5: "s8_p4", // Player 4 (Undercover) has 3 votes -> eliminated!
 };
-gm.tallyVotes("ROOM8");
+ucHandler.tallyVotes(r8, mockIO, gm);
 assert.strictEqual(p4.isAlive, false, "Player 4 (Undercover) must be dead");
 assert.strictEqual(r8.players.filter((p) => p.isAlive).length, 3, "Must have 3 alive players remaining");
-const winRound2 = gm.evaluateWinCondition("ROOM8");
+const winRound2 = ucHandler.evaluateWinCondition(r8);
 assert.strictEqual(winRound2.gameOver, false, "Game must NOT end after Undercover eliminated when Mr. White is still alive");
 
 // Fast-forward to Round 3
-gm.prepareNextRound("ROOM8");
+ucHandler.prepareNextRound(r8, mockIO, gm);
 assert.strictEqual(r8.roundNumber, 3, "Round number must be 3");
 
 // In Round 3, eliminate Player 2 (Civilian) -> Reaches 2 players (1 Civilian, 1 Mr. White) -> Endgame!
 p2.isAlive = false;
 assert.strictEqual(r8.players.filter((p) => p.isAlive).length, 2, "Must reach 2 players remaining");
-const winRound3 = gm.evaluateWinCondition("ROOM8");
+const winRound3 = ucHandler.evaluateWinCondition(r8);
 assert.strictEqual(winRound3.gameOver, true, "Game must END when 2 players remain (1 Civilian + 1 Impostor)");
 assert.strictEqual(winRound3.winnerRole, "MR_WHITE", "Mr. White must win when reaching final 2");
 console.log("✔ Multi-Round Elimination Loop & Final 2 Endgame passed");

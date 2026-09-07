@@ -1,5 +1,5 @@
 import React from "react";
-import { Sparkles, Users, Compass, Eye, ShieldAlert, Sliders, Moon, Palette, Layers, Flame } from "lucide-react";
+import { Sparkles, Users, Compass, Eye, ShieldAlert, Sliders, Moon, Palette, Layers, Flame, Rocket } from "lucide-react";
 
 import UndercoverGame from "./undercover/UndercoverGame";
 import UndercoverSettings from "./undercover/UndercoverSettings";
@@ -24,6 +24,10 @@ import RemiRules from "./remi/RemiRules";
 import UnoGame from "./uno/UnoGame";
 import UnoSettings from "./uno/UnoSettings";
 import UnoRules from "./uno/UnoRules";
+
+import ImpostorGame from "./impostor/ImpostorGame";
+import ImpostorSettings from "./impostor/ImpostorSettings";
+import ImpostorRules from "./impostor/ImpostorRules";
 
 export const GAMES_CATALOG = {
   undercover: {
@@ -151,6 +155,27 @@ export const GAMES_CATALOG = {
     GameComponent: UnoGame,
     SettingsComponent: UnoSettings,
     RulesComponent: UnoRules,
+  },
+  impostor: {
+    id: "impostor",
+    name: "Impostor",
+    fullName: "Impostor: Space Sabotage",
+    tagline: "Selesaikan misi, waspadai penyusup di antariksa!",
+    description:
+      "Game deduksi sosial luar angkasa legendaris! Kerjakan mini-tasks di kapal dan perbaiki sabotase darurat. Impostor mengintai untuk melenyapkan kru secara diam-diam. Adakan Emergency Meeting dan temukan impostornya!",
+    category: "Deduksi & Sabotase",
+    badge: "Petualangan Angkasa 🚀",
+    badgeColor: "bg-[#FFF0ED] text-[#FF4D4D] border-[#FFB2A1]",
+    minPlayers: 3,
+    maxPlayers: 15,
+    duration: "6 - 12 Menit",
+    difficulty: "Seru",
+    tags: ["Kapal Antariksa", "Mini-Tasks", "Sabotase", "Emergency Meeting"],
+    icon: Rocket,
+    themeColor: "#FF4D4D",
+    GameComponent: ImpostorGame,
+    SettingsComponent: ImpostorSettings,
+    RulesComponent: ImpostorRules,
   },
 };
 

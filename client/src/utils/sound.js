@@ -270,6 +270,98 @@ export function playSound(type, options = {}) {
         break;
       }
 
+      case "emergency": {
+        // Emergency Meeting siren: Two-tone urgent alarm pulse
+        for (let i = 0; i < 3; i++) {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "sawtooth";
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          const start = now + i * 0.16;
+          osc.frequency.setValueAtTime(650, start);
+          osc.frequency.linearRampToValueAtTime(880, start + 0.08);
+          gain.gain.setValueAtTime(0.12, start);
+          gain.gain.exponentialRampToValueAtTime(0.001, start + 0.14);
+          osc.start(start);
+          osc.stop(start + 0.14);
+        }
+        break;
+      }
+
+      case "kill": {
+        // Elimination hit: Heavy punchy thud with dramatic pitch drop
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sawtooth";
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.frequency.setValueAtTime(380, now);
+        osc.frequency.exponentialRampToValueAtTime(45, now + 0.28);
+        gain.gain.setValueAtTime(0.20, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+        osc.start(now);
+        osc.stop(now + 0.28);
+        break;
+      }
+
+      case "task": {
+        // Task completed: Bright satisfying crystal chime ("Ting-Ting!")
+        const freqs = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
+        freqs.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "sine";
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          const start = now + idx * 0.04;
+          osc.frequency.setValueAtTime(freq, start);
+          gain.gain.setValueAtTime(0.12, start);
+          gain.gain.exponentialRampToValueAtTime(0.001, start + 0.25);
+          osc.start(start);
+          osc.stop(start + 0.25);
+        });
+        break;
+      }
+
+      case "sabotage": {
+        // Red alert alarm klaxon
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "square";
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.frequency.setValueAtTime(440, now);
+        osc.frequency.setValueAtTime(330, now + 0.12);
+        gain.gain.setValueAtTime(0.09, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+        osc.start(now);
+        osc.stop(now + 0.24);
+        break;
+      }
+
+      case "vent": {
+        // Metal vent whoosh
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.frequency.setValueAtTime(180, now);
+        osc.frequency.exponentialRampToValueAtTime(420, now + 0.08);
+        osc.frequency.exponentialRampToValueAtTime(100, now + 0.18);
+        gain.gain.setValueAtTime(0.14, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+        osc.start(now);
+        osc.stop(now + 0.18);
+        break;
+      }
+
       default:
         break;
     }

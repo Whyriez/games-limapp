@@ -602,8 +602,9 @@ export class SpyfallHandler {
     const leaderboard = getLeaderboard();
 
     const gameOverPayload = {
-      winnerRole: winnerSide === "SPY" ? "UNDERCOVER" : "CIVILIAN",
-      winnerSide,
+      gameType: "spyfall",
+      winnerRole: winnerSide === "SPY" ? "SPY" : "CITIZEN",
+      winnerSide: winnerSide === "SPY" ? "SPY" : "CITIZEN",
       summaryMessage,
       secretLocation: room.secretLocation,
       players: room.players.map((p) => ({

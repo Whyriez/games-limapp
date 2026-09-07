@@ -228,7 +228,15 @@ export default function GameOverModal({
                   (currentPlayerId && p.playerId && p.playerId === currentPlayerId) ||
                   (currentNickname && p.name && p.name.trim().toLowerCase() === currentNickname.trim().toLowerCase())
                 );
-                const roleKey = p.isSpy ? "SPY" : p.role || "CIVILIAN";
+                
+                let roleKey = p.isSpy ? "SPY" : p.role || "CIVILIAN";
+                if (gameType === "spyfall") {
+                  roleKey = p.isSpy ? "SPY" : "CITIZEN";
+                } else if (gameType === "uno") {
+                  roleKey = p.isWinner ? "UNO_WINNER" : "CIVILIAN";
+                } else if (gameType === "remi") {
+                  roleKey = p.isWinner ? "REMI_WINNER" : "CIVILIAN";
+                }
                 const roleTag = roleStyles[roleKey] || (p.isWinner ? roleStyles.UNO_WINNER : roleStyles.CIVILIAN);
 
                 let statusSubtitle = p.isAlive !== false ? "Bertahan Hidup" : "Tereliminasi";
@@ -240,6 +248,19 @@ export default function GameOverModal({
                   statusSubtitle = p.isWinner
                     ? "🏆 Menang (Tutup Remi!)"
                     : `Kartu Mati: ${p.deadwoodScore !== undefined ? p.deadwoodScore : 0} Poin`;
+                } else if (gameType === "spyfall") {
+                  statusSubtitle = p.isSpy
+                    ? "🕵️ Agen Rahasia (Spy)"
+                    : `📍 Warga (${p.location || secretLocation?.name || "Lokasi"})`;
+                }
+
+                let badgeText = p.isSpy ? "SPY" : p.role || "Pemain";
+                if (gameType === "uno") {
+                  badgeText = p.isWinner ? "JUARA UNO" : "PEMAIN";
+                } else if (gameType === "remi") {
+                  badgeText = p.isWinner ? "JUARA REMI" : "PEMAIN";
+                } else if (gameType === "spyfall") {
+                  badgeText = p.isSpy ? "SPY" : `${p.role || "Warga"}`;
                 }
 
                 return (
@@ -276,11 +297,7 @@ export default function GameOverModal({
                     <div className="flex items-center gap-1.5 shrink-0">
                       <span className={`flex items-center gap-1.5 text-xs font-black px-3 py-1 rounded-full border-2 uppercase ${roleTag.badge}`}>
                         {roleTag.icon}
-                        <span>
-                          {gameType === "uno" || gameType === "remi"
-                            ? p.isWinner ? "JUARA" : "PEMAIN"
-                            : p.isSpy ? "SPY" : p.role || "Pemain"}
-                        </span>
+                        <span>{badgeText}</span>
                       </span>
                     </div>
                   </div>

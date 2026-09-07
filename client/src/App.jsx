@@ -36,6 +36,8 @@ import {
   Gamepad2,
   ChevronDown,
   ChevronUp,
+  AlertTriangle,
+  StopCircle,
 } from "lucide-react";
 
 export default function App() {
@@ -110,6 +112,7 @@ export default function App() {
   // End Game State
   const [gameOverData, setGameOverData] = useState(null);
   const [pendingGameOverData, setPendingGameOverData] = useState(null);
+  const [showCancelGameModal, setShowCancelGameModal] = useState(false);
 
   // Alert & Modals
   const [bannerAlert, setBannerAlert] = useState(null);
@@ -617,13 +620,15 @@ export default function App() {
       setVotedTarget(null);
       setDiscussionEndsAt(null);
       setMemorizeEndsAt(null);
+      setInquiryEndsAt(null);
       setNightEndsAt(null);
       setDayDiscussionEndsAt(null);
       setChoiceEndsAt(null);
       setDrawEndsAt(null);
       setMrWhiteGuessTarget(null);
+      setShowCancelGameModal(false);
 
-      if (eliminationModalRef.current) {
+      if (eliminationModalRef.current && (data.gameType === "undercover" || data.gameType === "werewolf")) {
         setPendingGameOverData(data);
         setEliminationModalData((prev) => {
           const updated = prev ? { ...prev, isGameOver: true } : prev;
@@ -631,15 +636,26 @@ export default function App() {
           return updated;
         });
       } else {
+        eliminationModalRef.current = null;
+        setEliminationModalData(null);
         setGameOverData(data);
         setRoom((prev) => (prev ? { ...prev, status: "GAME_OVER" } : prev));
 
         setMyRoleData((currentRole) => {
           const amIWinner =
-            currentRole &&
-            (currentRole.role === data.winnerRole ||
+            (data.winnerSocketId && data.winnerSocketId === socket.id) ||
+            (data.players && data.players.some((p) => p.isWinner && (p.socketId === socket.id || (identity.playerId && p.playerId === identity.playerId)))) ||
+            (currentRole && (
+              currentRole.role === data.winnerRole ||
               currentRole.isWinner ||
-              (data.winnerRole === "UNDERCOVER" && currentRole.role === "UNDERCOVER"));
+              (data.winnerRole === "SPY" && currentRole.isSpy) ||
+              (data.winnerRole === "CITIZEN" && !currentRole.isSpy) ||
+              (data.winnerRole === "UNDERCOVER" && currentRole.role === "UNDERCOVER") ||
+              (data.winnerRole === "VILLAGER" && currentRole.role !== "WEREWOLF") ||
+              (data.winnerRole === "WEREWOLF" && currentRole.role === "WEREWOLF") ||
+              (data.winnerRole === "CREWMATE" && currentRole.role === "CREWMATE") ||
+              (data.winnerRole === "IMPOSTOR" && currentRole.role === "IMPOSTOR")
+            ));
           playSound(amIWinner ? "win" : "defeat");
           return currentRole;
         });
@@ -648,6 +664,7 @@ export default function App() {
 
     socket.on("room:returned_to_lobby", ({ room: refreshedRoom }) => {
       setRoom(refreshedRoom);
+      setShowCancelGameModal(false);
       setGameOverData(null);
       setPendingGameOverData(null);
       setMyRoleData(null);
@@ -666,7 +683,8 @@ export default function App() {
       setMrWhiteGuessTarget(null);
       setVotedTarget(null);
       setIsDiscussionReady(false);
-      showAlert("👑 Kembali ke Ruang Tunggu (Lobby).");
+      showAlert("👑 Permainan dikembalikan ke Ruang Tunggu (Lobby).");
+      playSound("message");
     });
 
     socket.on("host:migrated", ({ newHostName }) => {
@@ -792,9 +810,25 @@ export default function App() {
     socket.emit("game:start", { roomId: room.id });
   };
 
+  const handleAddBot = () => {
+    if (!room) return;
+    socket.emit("room:add_bot", { roomId: room.id });
+  };
+
+  const handleRemoveBot = (botSocketId) => {
+    if (!room) return;
+    socket.emit("room:remove_bot", { roomId: room.id, botSocketId });
+  };
+
   const handleReturnToLobby = () => {
     if (!room) return;
     socket.emit("room:return_lobby", { roomId: room.id });
+  };
+
+  const handleConfirmCancelGame = () => {
+    if (!room) return;
+    socket.emit("room:return_lobby", { roomId: room.id });
+    setShowCancelGameModal(false);
   };
 
 
@@ -919,7 +953,9 @@ export default function App() {
           currentRole &&
           (currentRole.role === pData.winnerRole ||
             currentRole.isWinner ||
-            (pData.winnerRole === "UNDERCOVER" && currentRole.role === "UNDERCOVER"));
+            (pData.winnerRole === "UNDERCOVER" && currentRole.role === "UNDERCOVER") ||
+            (pData.winnerRole === "CREWMATE" && currentRole.role === "CREWMATE") ||
+            (pData.winnerRole === "IMPOSTOR" && currentRole.role === "IMPOSTOR"));
         playSound(amIWinner ? "win" : "defeat");
         return currentRole;
       });
@@ -1010,8 +1046,20 @@ export default function App() {
             )}
           </div>
 
-          {/* Right: Floating Active Phase Timer Indicator */}
+          {/* Right: Floating Active Phase Timer Indicator & Host Cancel Button */}
           <div className="flex items-center gap-2">
+            {room?.status !== "LOBBY" && room?.status !== "GAME_OVER" && isHost && (
+              <button
+                type="button"
+                onClick={() => setShowCancelGameModal(true)}
+                title="Batalkan permainan dan kembali ke lobby"
+                className="flex items-center gap-1.5 text-xs font-black bg-[#FFF0ED] hover:bg-[#FFE0D9] text-[#E64B2D] border-2 border-[#FFB2A1] px-3 py-1.5 rounded-full transition shadow-xs cursor-pointer active:scale-95 shrink-0 animate-pop-spring"
+              >
+                <StopCircle className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Batalkan Game</span>
+              </button>
+            )}
+
             {room?.status === "MEMORIZE_PHASE" && memorizeEndsAt && (
               <TimerDisplay endsAt={memorizeEndsAt} duration={25} />
             )}
@@ -1112,6 +1160,8 @@ export default function App() {
                       settings={room?.settings}
                       onStartGame={handleStartGame}
                       onUpdateSettings={handleUpdateSettings}
+                      onAddBot={handleAddBot}
+                      onRemoveBot={handleRemoveBot}
                     />
 
                   </div>
@@ -1386,6 +1436,7 @@ export default function App() {
                     discussionReadySocketIds={discussionReadyStats.readySocketIds}
                     onStartGame={handleStartGame}
                     onUpdateSettings={handleUpdateSettings}
+                    onCancelGame={() => setShowCancelGameModal(true)}
                   />
                 </div>
               </div>
@@ -1494,6 +1545,45 @@ export default function App() {
         isHost={isHost}
         onReset={handleResetLeaderboard}
       />
+
+      {/* Confirmation Modal for Cancelling/Aborting Active Game */}
+      {showCancelGameModal && typeof document !== "undefined" && createPortal(
+        <div className="fixed inset-0 z-[9999] min-h-[100dvh] w-screen flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
+          <div className="clay-card p-6 sm:p-7 max-w-md w-full m-auto bg-white space-y-4 border-3 border-[#FFB2A1] shadow-2xl animate-pop-spring text-center">
+            <div className="w-14 h-14 mx-auto rounded-3xl bg-[#FFF0ED] border-2 border-[#FFB2A1] flex items-center justify-center text-[#E64B2D] shadow-xs">
+              <AlertTriangle className="w-7 h-7 animate-bounce" />
+            </div>
+
+            <div className="space-y-1.5">
+              <h3 className="text-lg sm:text-xl font-black text-[#3A332C]">
+                Batalkan Permainan?
+              </h3>
+              <p className="text-xs sm:text-sm font-semibold text-[#8C8275] leading-relaxed">
+                Permainan yang sedang berlangsung akan dihentikan dan seluruh pemain akan dikembalikan ke <strong>Ruang Tunggu (Lobby)</strong>. Anda dapat mengganti jenis game atau menunggu teman lain bergabung.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowCancelGameModal(false)}
+                className="btn-3d-peach text-xs sm:text-sm font-black py-3 rounded-2xl cursor-pointer"
+              >
+                Lanjut Main
+              </button>
+
+              <button
+                type="button"
+                onClick={handleConfirmCancelGame}
+                className="py-3 rounded-2xl bg-[#E64B2D] hover:bg-[#CC3B1E] text-white font-black text-xs sm:text-sm border-2 border-[#B82B10] shadow-[0_4px_0_#991B0B] active:translate-y-1 active:shadow-none transition cursor-pointer"
+              >
+                Ya, Batalkan
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

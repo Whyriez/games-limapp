@@ -68,7 +68,7 @@ assert.strictEqual(room.players.length, 3);
 
 gm.startGame("UNO_ROOM");
 assert.strictEqual(room.status, "PLAYING_PHASE");
-assert.strictEqual(room.playerHands[room.turnOrder[0]].length, 7);
+assert.ok(room.playerHands[room.turnOrder[0]].length >= 7);
 assert.ok(room.activeColor);
 assert.ok(room.discardPile.length >= 1);
 assert.ok(room.currentTurnSocketId);

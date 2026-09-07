@@ -66,7 +66,7 @@ export default function GameSelectorModal({
                         className="w-10 h-10 rounded-2xl flex items-center justify-center border shadow-2xs"
                         style={{
                           backgroundColor:
-                            game.id === "spyfall" || game.id === "uno" || game.id === "remi"
+                            game.id === "spyfall" || game.id === "uno" || game.id === "remi" || game.id === "impostor"
                               ? "#FFF0ED"
                               : game.id === "werewolf"
                               ? "#F7F1FF"
@@ -74,7 +74,7 @@ export default function GameSelectorModal({
                               ? "#EDFCF2"
                               : "#EFF8FF",
                           borderColor:
-                            game.id === "spyfall" || game.id === "uno" || game.id === "remi"
+                            game.id === "spyfall" || game.id === "uno" || game.id === "remi" || game.id === "impostor"
                               ? "#FFB2A1"
                               : game.id === "werewolf"
                               ? "#D5B8FF"
@@ -82,7 +82,9 @@ export default function GameSelectorModal({
                               ? "#89EFA9"
                               : "#8CD3FF",
                           color:
-                            game.id === "uno"
+                            game.id === "impostor"
+                              ? "#FF4D4D"
+                              : game.id === "uno"
                               ? "#FF3B30"
                               : game.id === "spyfall" || game.id === "remi"
                               ? "#E64B2D"

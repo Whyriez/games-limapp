@@ -4,6 +4,7 @@ import { WerewolfHandler } from "./werewolf/index.js";
 import { DrawGuessHandler } from "./drawguess/index.js";
 import { RemiHandler } from "./remi/index.js";
 import { UnoHandler } from "./uno/index.js";
+import { ImpostorHandler } from "./impostor/index.js";
 
 export const GAMES_REGISTRY = {
   undercover: {
@@ -115,6 +116,26 @@ export const GAMES_REGISTRY = {
       turnTimeLimit: 30,
     },
     handler: new UnoHandler(),
+  },
+  impostor: {
+    id: "impostor",
+    name: "Impostor",
+    fullName: "Impostor: Space Sabotage",
+    tagline: "Selesaikan misi, waspadai penyusup di antariksa!",
+    description:
+      "Game deduksi sosial luar angkasa legendaris! Crewmate berkeliling menyelesaikan mini-tasks di kapal dan memperbaiki sabotase. Impostor menyusup, menyabotase kapal, dan melenyapkan crewmate secara rahasia. Adakan Emergency Meeting dan temukan impostornya!",
+    minPlayers: 3,
+    maxPlayers: 15,
+    category: "Deduksi & Sabotase",
+    badge: "Petualangan Angkasa 🚀",
+    duration: "6 - 12 Menit",
+    defaultSettings: {
+      impostorCount: 1,
+      killCooldown: 25,
+      discussionDuration: 60,
+      tasksPerPlayer: 3,
+    },
+    handler: new ImpostorHandler(),
   },
 };
 

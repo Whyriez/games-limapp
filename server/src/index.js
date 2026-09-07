@@ -583,6 +583,61 @@ io.on("connection", (socket) => {
     gameManager.unoSyncState(roomId, socket.id);
   });
 
+  // Impostor Actions
+  socket.on("impostor:pos", (posData) => {
+    if (!posData || !posData.roomId) return;
+    gameManager.impostorUpdatePosition(posData.roomId, socket.id, posData);
+  });
+
+  socket.on("impostor:move", ({ roomId, targetRoomId }) => {
+    const result = gameManager.impostorMoveRoom(roomId, socket.id, targetRoomId);
+    if (result && result.error) socket.emit("error:message", result.error);
+  });
+
+  socket.on("impostor:vent", ({ roomId, targetRoomId }) => {
+    const result = gameManager.impostorVentTravel(roomId, socket.id, targetRoomId);
+    if (result && result.error) socket.emit("error:message", result.error);
+  });
+
+  socket.on("impostor:task_complete", ({ roomId, taskId }) => {
+    const result = gameManager.impostorCompleteTask(roomId, socket.id, taskId);
+    if (result && result.error) socket.emit("error:message", result.error);
+  });
+
+  socket.on("impostor:kill", ({ roomId, targetSocketId }) => {
+    const result = gameManager.impostorKill(roomId, socket.id, targetSocketId);
+    if (result && result.error) socket.emit("error:message", result.error);
+  });
+
+  socket.on("impostor:sabotage", ({ roomId, sabotageType }) => {
+    const result = gameManager.impostorSabotage(roomId, socket.id, sabotageType);
+    if (result && result.error) socket.emit("error:message", result.error);
+  });
+
+  socket.on("impostor:fix_sabotage", ({ roomId }) => {
+    const result = gameManager.impostorFixSabotage(roomId, socket.id);
+    if (result && result.error) socket.emit("error:message", result.error);
+  });
+
+  socket.on("impostor:report", ({ roomId, bodyId }) => {
+    const result = gameManager.impostorReportBody(roomId, socket.id, bodyId);
+    if (result && result.error) socket.emit("error:message", result.error);
+  });
+
+  socket.on("impostor:emergency", ({ roomId }) => {
+    const result = gameManager.impostorEmergencyMeeting(roomId, socket.id);
+    if (result && result.error) socket.emit("error:message", result.error);
+  });
+
+  socket.on("impostor:vote", ({ roomId, targetSocketId }) => {
+    const result = gameManager.impostorCastVote(roomId, socket.id, targetSocketId);
+    if (result && result.error) socket.emit("error:message", result.error);
+  });
+
+  socket.on("impostor:skip_discussion", ({ roomId }) => {
+    gameManager.impostorSkipDiscussion(roomId, socket.id);
+  });
+
 
   // Admin Reset Leaderboard / Podium
   socket.on("leaderboard:reset", () => {

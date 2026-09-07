@@ -334,6 +334,74 @@ export class GameManager {
     };
   }
 
+  addBot(roomId, socketId) {
+    const room = this.rooms.get(roomId);
+    if (!room) return { error: "Room tidak ditemukan" };
+    if (room.status !== "LOBBY") return { error: "Hanya dapat menambah bot saat di Lobby" };
+    if (room.hostId !== socketId) return { error: "Hanya Host yang dapat menambah bot" };
+
+    const BOT_NAMES = [
+      "Bot Budi", "Bot Siti", "Bot Agus", "Bot Dewi", "Bot Joko",
+      "Bot Rina", "Bot Reza", "Bot Maya", "Bot Eko", "Bot Wati",
+      "Bot Aldo", "Bot Bella", "Bot Citra", "Bot Dimas", "Bot Fajar"
+    ];
+    const existingBotCount = room.players.filter((p) => p.isBot).length;
+    const botName = BOT_NAMES[existingBotCount % BOT_NAMES.length] || `Bot ${existingBotCount + 1}`;
+    const botId = `bot_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+
+    room.players.push({
+      socketId: botId,
+      playerId: botId,
+      name: botName,
+      isAlive: true,
+      isSpectator: false,
+      connected: true,
+      isBot: true,
+      role: null,
+      word: null,
+    });
+
+    if (room.gameType === "undercover" && room.settings?.autoBalance !== false) {
+      const activeCount = room.players.filter((p) => p.connected).length;
+      const autoRoles = calculateAutoRoleDistribution(activeCount);
+      room.settings = {
+        ...room.settings,
+        undercoverCount: autoRoles.undercoverCount,
+        mrWhiteCount: autoRoles.mrWhiteCount,
+      };
+      this.io.to(roomId).emit("room:settings_updated", room.settings);
+    }
+
+    this.io.to(roomId).emit("room:updated", this.getSanitizedRoom(roomId));
+    return { success: true, room: this.getSanitizedRoom(roomId) };
+  }
+
+  removeBot(roomId, socketId, botSocketId) {
+    const room = this.rooms.get(roomId);
+    if (!room) return { error: "Room tidak ditemukan" };
+    if (room.status !== "LOBBY") return { error: "Hanya dapat menghapus bot saat di Lobby" };
+    if (room.hostId !== socketId) return { error: "Hanya Host yang dapat menghapus bot" };
+
+    const botIdx = room.players.findIndex((p) => p.socketId === botSocketId && p.isBot);
+    if (botIdx === -1) return { error: "Bot tidak ditemukan" };
+
+    room.players.splice(botIdx, 1);
+
+    if (room.gameType === "undercover" && room.settings?.autoBalance !== false) {
+      const activeCount = room.players.filter((p) => p.connected).length;
+      const autoRoles = calculateAutoRoleDistribution(activeCount);
+      room.settings = {
+        ...room.settings,
+        undercoverCount: autoRoles.undercoverCount,
+        mrWhiteCount: autoRoles.mrWhiteCount,
+      };
+      this.io.to(roomId).emit("room:settings_updated", room.settings);
+    }
+
+    this.io.to(roomId).emit("room:updated", this.getSanitizedRoom(roomId));
+    return { success: true, room: this.getSanitizedRoom(roomId) };
+  }
+
   startGame(roomId) {
     const room = this.rooms.get(roomId);
     if (!room) return { error: "Room tidak ditemukan" };
@@ -381,6 +449,53 @@ export class GameManager {
     room.discussionReadyPlayers = new Set();
     room.activeAccusation = null;
 
+    // Reset turn timestamps & timers
+    room.currentTurnSocketId = null;
+    room.currentTurnPlayerId = null;
+    room.currentTurnName = null;
+    room.currentTurnEndsAt = null;
+    room.memorizeEndsAt = null;
+    room.discussionEndsAt = null;
+    room.inquiryEndsAt = null;
+    room.nightEndsAt = null;
+    room.dayDiscussionEndsAt = null;
+    room.choiceEndsAt = null;
+    room.drawEndsAt = null;
+    room.spyGuessEndsAt = null;
+    room.votingEndsAt = null;
+
+    // Reset UNO & Remi states
+    room.playerHands = {};
+    room.discardPile = [];
+    room.drawPile = [];
+    room.hasDrawnThisTurn = false;
+    room.drawnCardId = null;
+    room.lastActionAlert = null;
+    room.unoAlert = null;
+
+    // Reset Draw & Guess states
+    room.currentDrawerSocketId = null;
+    room.currentDrawerPlayerId = null;
+    room.currentDrawerName = null;
+    room.secretWord = null;
+    room.secretCategory = null;
+    room.canvasStrokes = [];
+    room.guessedSocketIds = new Set();
+    room.correctGuessers = [];
+    room.drawTurnOrder = [];
+    room.currentDrawIndex = 0;
+
+    // Reset Spyfall states
+    room.secretLocation = null;
+    room.allLocations = [];
+    room.activeSpyGuesser = null;
+
+    // Reset Werewolf states
+    room.seerTarget = null;
+    room.doctorTarget = null;
+    room.wolfVotes = {};
+    room.dayAnnouncement = null;
+
     room.players.forEach((p) => {
       p.isAlive = p.connected;
       p.isSpectator = false;
@@ -389,6 +504,7 @@ export class GameManager {
       p.location = null;
       p.isSpy = false;
       p.score = 0;
+      p.calledUno = false;
     });
 
     if (room.gameType === "undercover" && room.settings?.autoBalance) {
@@ -720,6 +836,106 @@ export class GameManager {
     }
   }
 
+  // Impostor specific actions
+  impostorUpdatePosition(roomId, socketId, posData) {
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+    const handler = getGameHandler("impostor");
+    if (handler && typeof handler.updatePosition === "function") {
+      return handler.updatePosition(room, socketId, posData, this.io);
+    }
+  }
+
+  impostorMoveRoom(roomId, socketId, targetRoomId) {
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+    const handler = getGameHandler("impostor");
+    if (handler && typeof handler.moveRoom === "function") {
+      return handler.moveRoom(room, socketId, targetRoomId, this.io, this);
+    }
+  }
+
+  impostorVentTravel(roomId, socketId, targetRoomId) {
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+    const handler = getGameHandler("impostor");
+    if (handler && typeof handler.ventTravel === "function") {
+      return handler.ventTravel(room, socketId, targetRoomId, this.io, this);
+    }
+  }
+
+  impostorCompleteTask(roomId, socketId, taskId) {
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+    const handler = getGameHandler("impostor");
+    if (handler && typeof handler.completeTask === "function") {
+      return handler.completeTask(room, socketId, taskId, this.io, this);
+    }
+  }
+
+  impostorKill(roomId, socketId, targetSocketId) {
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+    const handler = getGameHandler("impostor");
+    if (handler && typeof handler.killPlayer === "function") {
+      return handler.killPlayer(room, socketId, targetSocketId, this.io, this);
+    }
+  }
+
+  impostorSabotage(roomId, socketId, sabotageType) {
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+    const handler = getGameHandler("impostor");
+    if (handler && typeof handler.triggerSabotage === "function") {
+      return handler.triggerSabotage(room, socketId, sabotageType, this.io, this);
+    }
+  }
+
+  impostorFixSabotage(roomId, socketId) {
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+    const handler = getGameHandler("impostor");
+    if (handler && typeof handler.fixSabotage === "function") {
+      return handler.fixSabotage(room, socketId, this.io, this);
+    }
+  }
+
+  impostorReportBody(roomId, socketId, bodyId) {
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+    const handler = getGameHandler("impostor");
+    if (handler && typeof handler.reportBody === "function") {
+      return handler.reportBody(room, socketId, bodyId, this.io, this);
+    }
+  }
+
+  impostorEmergencyMeeting(roomId, socketId) {
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+    const handler = getGameHandler("impostor");
+    if (handler && typeof handler.emergencyMeeting === "function") {
+      return handler.emergencyMeeting(room, socketId, this.io, this);
+    }
+  }
+
+  impostorCastVote(roomId, socketId, targetSocketId) {
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+    const handler = getGameHandler("impostor");
+    if (handler && typeof handler.castVote === "function") {
+      return handler.castVote(room, socketId, targetSocketId, this.io, this);
+    }
+  }
+
+  impostorSkipDiscussion(roomId, socketId) {
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+    const handler = getGameHandler("impostor");
+    if (handler && typeof handler.skipDiscussionToVoting === "function") {
+      return handler.skipDiscussionToVoting(room, socketId, this.io, this);
+    }
+  }
+
   addBot(roomId, socketId) {
     const room = this.rooms.get(roomId);
     if (!room || room.status !== "LOBBY") return { error: "Hanya bisa menambah bot di ruang tunggu (Lobby)" };
@@ -925,6 +1141,14 @@ export class GameManager {
       clearTimeout(room.botTimerTimeout);
       room.botTimerTimeout = null;
     }
+    if (room.sabotageTimerTimeout) {
+      clearTimeout(room.sabotageTimerTimeout);
+      room.sabotageTimerTimeout = null;
+    }
+    if (room.botLoopInterval) {
+      clearInterval(room.botLoopInterval);
+      room.botLoopInterval = null;
+    }
   }
 
   getSanitizedRoom(roomId) {
@@ -952,6 +1176,13 @@ export class GameManager {
         playerId: p.playerId,
         name: p.name,
         isAlive: p.isAlive,
+        isGhost: !!p.isGhost,
+        isBot: !!p.isBot,
+        currentRoom: p.currentRoom || null,
+        x: typeof p.x === "number" ? p.x : 700,
+        y: typeof p.y === "number" ? p.y : 220,
+        facingLeft: !!p.facingLeft,
+        isMoving: !!p.isMoving,
         isSpectator: !!p.isSpectator,
         connected: p.connected,
       })),
@@ -993,6 +1224,16 @@ export class GameManager {
             drawEndsAt: room.drawEndsAt,
             choiceEndsAt: room.choiceEndsAt,
             scores: room.scores || {},
+          }
+        : null,
+      impostorInfo: room.gameType === "impostor"
+        ? {
+            deadBodies: room.deadBodies || [],
+            activeSabotage: room.activeSabotage || null,
+            activeMeeting: room.activeMeeting || null,
+            totalTasks: room.totalShipTasks || 0,
+            completedTasks: room.completedShipTasks || 0,
+            lastEjection: room.lastEjection || null,
           }
         : null,
     };

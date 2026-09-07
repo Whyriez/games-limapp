@@ -114,6 +114,13 @@ export default function LandingHub({
           textIcon: "#E64B2D",
           btnClass: "btn-3d-peach",
         };
+      case "impostor":
+        return {
+          bgIcon: "#FFF0ED",
+          borderIcon: "#FFB2A1",
+          textIcon: "#FF4D4D",
+          btnClass: "bg-[#FF4D4D] text-white hover:bg-[#E63939] shadow-md border-b-4 border-[#CC2B2B]",
+        };
       default:
         return {
           bgIcon: "#EFF8FF",

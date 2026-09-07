@@ -10,6 +10,11 @@
     "undercover": "Bakso Urat Test"
   },
   {
+    "category": "Uji Coba",
+    "civilian": "Bakso Sapi Test",
+    "undercover": "Bakso Urat Test"
+  },
+  {
     "category": "Kantor / Pekerjaan",
     "civilian": "Stopmap",
     "undercover": "Amplop Cokelat"
@@ -918,10 +923,5 @@
     "category": "Alam",
     "civilian": "Petir",
     "undercover": "Kilat"
-  },
-  {
-    "category": "Alam",
-    "civilian": "Pelangi",
-    "undercover": "Awan"
   }
 ]

@@ -546,38 +546,37 @@ export class UnoHandler {
     gameManager.clearAllTimers(room);
     room.status = "GAME_OVER";
     room.playerHands = room.playerHands || {};
+    room.currentTurnSocketId = null;
+    room.currentTurnPlayerId = null;
+    room.currentTurnEndsAt = null;
 
-    // Calculate penalty points of remaining cards in other players hands
-    const leaderboard = room.players.map((p) => {
+    room.players.forEach((p) => {
       const pHand = room.playerHands?.[p.socketId] || [];
       const deadwoodScore = pHand.reduce((acc, c) => acc + (c.score || 0), 0);
       const isWinner = winner && winner.playerId === p.playerId;
 
-      if (isWinner) {
-        updatePlayerGameResult(p.playerId, p.name, true, 100);
-      } else if (p.connected && !p.isSpectator) {
-        updatePlayerGameResult(p.playerId, p.name, false, Math.max(0, 30 - deadwoodScore));
-      }
-
-      return {
+      updatePlayerGameResult({
         playerId: p.playerId,
-        name: p.name,
+        nickname: p.name,
+        gameType: "uno",
+        role: "PLAYER",
         isWinner,
-        score: isWinner ? 100 : Math.max(0, 50 - deadwoodScore),
-        remainingCardsCount: pHand.length,
-        deadwoodScore,
-      };
+        points: isWinner ? 100 : Math.max(0, 50 - deadwoodScore),
+        wasVotedOut: false,
+        mrWhiteGuessCorrect: false,
+      });
     });
 
-    leaderboard.sort((a, b) => b.score - a.score);
+    const leaderboard = getLeaderboard();
 
     const gameOverPayload = {
       gameType: "uno",
       winnerRole: "UNO_WINNER",
+      winnerSide: "UNO_WINNER",
       winnerName: winner?.name || "Pemenang UNO",
       winnerSocketId: winner?.socketId,
       winType,
-      summaryMessage,
+      summaryMessage: summaryMessage || `🎉 UNO! Selamat kepada ${winner?.name || "Pemenang"} yang berhasil menghabiskan seluruh kartu!`,
       players: room.players.map((p) => {
         const pHand = room.playerHands?.[p.socketId] || [];
         const isWinner = winner && winner.playerId === p.playerId;
