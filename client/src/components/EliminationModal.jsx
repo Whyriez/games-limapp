@@ -108,7 +108,7 @@ export default function EliminationModal({ data, onClose }) {
       };
 
   const modalContent = (
-    <div className="fixed inset-0 z-[999] min-h-[100dvh] w-screen flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-[999] min-h-[100dvh] w-full flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
       <div className={`clay-card w-full max-w-md m-auto rounded-[32px] p-6 sm:p-8 border-3 ${style.border} text-center shadow-2xl animate-pop-spring relative overflow-hidden bg-white`}>
         {/* Top Right Close Button */}
         <button
@@ -215,5 +215,10 @@ export default function EliminationModal({ data, onClose }) {
     </div>
   );
 
-  return typeof document !== "undefined" ? createPortal(modalContent, document.body) : modalContent;
+  const targetContainer =
+    typeof document !== "undefined"
+      ? document.fullscreenElement || document.body
+      : null;
+
+  return targetContainer ? createPortal(modalContent, targetContainer) : modalContent;
 }

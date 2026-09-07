@@ -29,6 +29,7 @@ export default function PlayerList({
   onUpdateSettings,
   onCancelGame,
   onAddBot,
+  onAddBotsBatch,
   onRemoveBot,
 }) {
   const [isMobileExpanded, setIsMobileExpanded] = useState(false);
@@ -48,8 +49,8 @@ export default function PlayerList({
     <div className="space-y-4">
       {/* 1. Players List Card */}
       <div className="clay-card p-4 sm:p-6 shadow-sm space-y-3 sm:space-y-4 bg-white border-2 border-[#F6E6D0]">
-        <div className="flex items-center justify-between pb-2.5 sm:pb-3 border-b-2 border-[#F6E6D0]">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between flex-wrap gap-2 pb-2.5 sm:pb-3 border-b-2 border-[#F6E6D0]">
+          <div className="flex items-center gap-2 min-w-0">
             <div className="p-1.5 sm:p-2 rounded-xl bg-[#EFF8FF] text-[#1C8BE0] border border-[#8CD3FF] shadow-xs shrink-0">
               <Users className="w-4 h-4" />
             </div>
@@ -60,7 +61,7 @@ export default function PlayerList({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 flex-wrap justify-end">
             {status !== "LOBBY" ? (
               <span className="text-[11px] bg-[#EDFCF2] text-[#24A654] font-extrabold px-3 py-1 rounded-full border border-[#89EFA9] shadow-xs">
                 {aliveCount} Hidup
@@ -78,7 +79,18 @@ export default function PlayerList({
                 title="Tambah Bot AI untuk bermain bersama"
                 className="px-2.5 py-1 rounded-xl text-[11px] font-black bg-[#FFF8EC] hover:bg-[#FFEACD] text-[#D97E00] border border-[#FFA012] transition shadow-2xs flex items-center gap-1 cursor-pointer active:scale-95"
               >
-                <span>+ Bot AI</span>
+                <span>+ Bot</span>
+              </button>
+            )}
+
+            {status === "LOBBY" && isHost && onAddBotsBatch && (
+              <button
+                type="button"
+                onClick={() => onAddBotsBatch(3)}
+                title="Tambah 3 Bot sekaligus untuk langsung mulai game"
+                className="px-2.5 py-1 rounded-xl text-[11px] font-black bg-[#F3E8FF] hover:bg-[#E9D5FF] text-[#7E22CE] border border-[#C084FC] transition shadow-2xs flex items-center gap-1 cursor-pointer active:scale-95"
+              >
+                <span>+ 3 Bot ⚡</span>
               </button>
             )}
 

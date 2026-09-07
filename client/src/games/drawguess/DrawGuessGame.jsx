@@ -604,7 +604,7 @@ export default function DrawGuessGame({
 
       {/* MODAL 1: WORD CHOICE MODAL FOR DRAWER */}
       {wordChoices && wordChoices.length > 0 && isCurrentDrawer && typeof document !== "undefined" && createPortal(
-        <div className="fixed inset-0 z-[999] min-h-[100dvh] w-screen flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-[999] min-h-[100dvh] w-full flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
           <div className="clay-card p-6 max-w-md w-full m-auto bg-white space-y-4 border-2 border-[#50B5FF] shadow-2xl animate-pop-spring">
             <div className="text-center space-y-1">
               <div className="inline-flex p-3 bg-[#EFF8FF] text-[#1C8BE0] rounded-full border border-[#8CD3FF] animate-bounce">
@@ -635,12 +635,12 @@ export default function DrawGuessGame({
             </div>
           </div>
         </div>,
-        document.body
+        document.fullscreenElement || document.body
       )}
 
       {/* MODAL 2: TURN SUMMARY MODAL */}
       {turnSummary && typeof document !== "undefined" && createPortal(
-        <div className="fixed inset-0 z-[999] min-h-[100dvh] w-screen flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-[999] min-h-[100dvh] w-full flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
           <div className="clay-card p-6 max-w-md w-full m-auto bg-white space-y-4 border-2 border-[#FFA012] text-center shadow-2xl animate-pop-spring">
             <div className="space-y-1">
               <span className="text-[10px] font-black uppercase text-[#FFA012] bg-[#FFF8EC] border border-[#FFA012]/40 px-2.5 py-0.5 rounded-full">
@@ -688,7 +688,7 @@ export default function DrawGuessGame({
             )}
           </div>
         </div>,
-        document.body
+        document.fullscreenElement || document.body
       )}
     </div>
   );

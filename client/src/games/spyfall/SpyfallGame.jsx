@@ -416,7 +416,7 @@ export default function SpyfallGame({
 
       {/* MODAL 1: START ACCUSATION MODAL */}
       {showAccuseModal && typeof document !== "undefined" && createPortal(
-        <div className="fixed inset-0 z-[999] min-h-[100dvh] w-screen flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-[999] min-h-[100dvh] w-full flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
           <div className="clay-card p-6 max-w-md w-full m-auto bg-white space-y-4 border-2 border-[#F6E6D0] shadow-2xl animate-pop-spring">
             <div className="flex items-center justify-between pb-2 border-b border-[#F6E6D0]">
               <div className="flex items-center gap-2 text-[#E64B2D]">
@@ -434,38 +434,42 @@ export default function SpyfallGame({
               </button>
             </div>
 
-            <p className="text-xs text-[#8C8275] font-semibold">
-              Jika kamu yakin seseorang adalah Agen Rahasia (Spy), pilih namanya. Semua pemain lain akan voting apakah mereka setuju!
+            <p className="text-xs font-semibold text-[#8C8275] leading-relaxed">
+              Jika kamu yakin telah menemukan sang Agen Rahasia (Spy), ajukan tuduhan resmi. Jika seluruh pemain lain sepakat (setuju), game berakhir dan warga menang!
             </p>
 
-            <div className="space-y-2 max-h-[220px] overflow-y-auto">
-              {otherPlayers.map((p) => (
-                <button
-                  key={p.socketId}
-                  type="button"
-                  onClick={() => setSelectedSuspectId(p.socketId)}
-                  className={`w-full p-3 rounded-2xl border-2 flex items-center justify-between transition cursor-pointer ${
-                    selectedSuspectId === p.socketId
-                      ? "bg-[#FFF0ED] border-[#FFB2A1] text-[#E64B2D]"
-                      : "bg-[#FFFBF5] border-[#F0DDC5] hover:bg-[#FFF5E8] text-[#3A332C]"
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Avatar name={p.name} size="sm" />
-                    <span className="font-extrabold text-xs">{p.name}</span>
-                  </div>
-                  {selectedSuspectId === p.socketId && (
-                    <Check className="w-4 h-4 text-[#E64B2D]" />
-                  )}
-                </button>
-              ))}
+            {/* List of Suspects */}
+            <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+              {(room?.players || [])
+                .filter((p) => p.socketId !== socket?.id && p.isAlive && !p.isSpectator)
+                .map((player) => {
+                  const isSelected = selectedSuspectId === player.socketId;
+                  return (
+                    <button
+                      key={player.socketId}
+                      type="button"
+                      onClick={() => setSelectedSuspectId(player.socketId)}
+                      className={`w-full p-2.5 rounded-xl text-left text-xs font-black transition flex items-center justify-between border-2 cursor-pointer ${
+                        isSelected
+                          ? "bg-[#FFF0ED] border-[#FFB2A1] text-[#E64B2D] shadow-xs"
+                          : "bg-[#FFFBF5] border-[#F0DDC5] text-[#3A332C] hover:bg-white"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Avatar name={player.name} size="xs" />
+                        <span>{player.name}</span>
+                      </div>
+                      {isSelected && <span className="text-[10px] bg-[#E64B2D] text-white px-2 py-0.5 rounded-full font-bold">Tertuduh</span>}
+                    </button>
+                  );
+                })}
             </div>
 
-            <div className="flex gap-2 pt-2">
+            <div className="flex items-center gap-2 pt-2 border-t border-[#F6E6D0]">
               <button
                 type="button"
                 onClick={() => setShowAccuseModal(false)}
-                className="flex-1 py-2.5 rounded-xl border border-[#F0DDC5] text-xs font-black text-[#8C8275] hover:text-[#3A332C] cursor-pointer"
+                className="flex-1 py-2.5 rounded-xl border border-[#D9C4AB] text-xs font-bold text-[#8C8275] hover:bg-[#FFFBF5] transition cursor-pointer"
               >
                 Batal
               </button>
@@ -485,7 +489,7 @@ export default function SpyfallGame({
 
       {/* MODAL 2: ACTIVE ACCUSATION VOTING MODAL */}
       {room?.status === "ACCUSATION_PHASE" && room?.activeAccusation && typeof document !== "undefined" && createPortal(
-        <div className="fixed inset-0 z-[999] min-h-[100dvh] w-screen flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-[999] min-h-[100dvh] w-full flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
           <div className="clay-card p-6 max-w-md w-full m-auto bg-white space-y-4 border-2 border-[#FFA012] shadow-2xl animate-pop-spring">
             {/* Accusation Header */}
             <div className="flex items-center justify-between pb-2 border-b border-[#F6E6D0]">
@@ -626,12 +630,12 @@ export default function SpyfallGame({
             })()}
           </div>
         </div>,
-        document.body
+        document.fullscreenElement || document.body
       )}
 
       {/* MODAL 3: SPY LOCATION GUESS MODAL */}
       {(showSpyGuessModal || room?.status === "SPY_GUESS_PHASE") && typeof document !== "undefined" && createPortal(
-        <div className="fixed inset-0 z-[999] min-h-[100dvh] w-screen flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-[999] min-h-[100dvh] w-full flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
           <div className="clay-card p-6 max-w-lg w-full m-auto bg-white space-y-4 border-2 border-[#50B5FF] shadow-2xl animate-pop-spring">
             <div className="flex items-center justify-between pb-2 border-b border-[#F6E6D0]">
               <div className="flex items-center gap-2 text-[#1C8BE0]">
@@ -698,7 +702,7 @@ export default function SpyfallGame({
             </div>
           </div>
         </div>,
-        document.body
+        document.fullscreenElement || document.body
       )}
     </div>
   );

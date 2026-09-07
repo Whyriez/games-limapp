@@ -56,6 +56,7 @@ export default function ImpostorGame({
   const [activeTaskModal, setActiveTaskModal] = useState(null); // task object
   const [showSabotageModal, setShowSabotageModal] = useState(false);
   const [showVentModal, setShowVentModal] = useState(false);
+  const [showTasksTray, setShowTasksTray] = useState(false);
   const [chatInput, setChatInput] = useState("");
   const chatContainerRef = useRef(null);
 
@@ -519,64 +520,71 @@ export default function ImpostorGame({
   // ==========================================
   return (
     <div className="space-y-4 sm:space-y-5 animate-pop-spring">
-      {/* 1. TOP STATUS & TASK PROGRESS BAR */}
-      <div className="clay-card p-4 sm:p-5 bg-white border-2 border-[#F6E6D0] space-y-3">
+      {/* 1. COMPACT TOP STATUS & TASK PROGRESS BAR */}
+      <div className="clay-card p-3 sm:p-4 bg-white border-2 border-[#F6E6D0] space-y-2.5 shadow-xs">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5">
+          {/* Left: Role & Room */}
+          <div className="flex items-center gap-2">
             <div
-              className={`p-2 rounded-2xl border ${
+              className={`p-1.5 rounded-xl border ${
                 isImpostor
                   ? "bg-[#FFF0ED] text-[#FF4D4D] border-[#FFB2A1]"
                   : "bg-[#EFF8FF] text-[#1C8BE0] border-[#8CD3FF]"
               }`}
             >
-              {isImpostor ? <Skull className="w-5 h-5" /> : <Rocket className="w-5 h-5" />}
+              {isImpostor ? <Skull className="w-4 h-4" /> : <Rocket className="w-4 h-4" />}
             </div>
             <div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <span
-                  className={`text-[10px] font-black uppercase px-2 py-0.2 rounded-full border ${
+                  className={`text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.2 rounded-full border ${
                     isImpostor
                       ? "bg-[#FFF0ED] text-[#FF4D4D] border-[#FFB2A1]"
                       : "bg-[#EFF8FF] text-[#1C8BE0] border-[#8CD3FF]"
                   }`}
                 >
-                  {isGhost ? "Hantu (Ghost)" : isImpostor ? "Impostor" : "Crewmate"}
+                  {isGhost ? "Hantu" : isImpostor ? "Impostor" : "Crewmate"}
                 </span>
-                {isGhost && (
-                  <span className="text-[10px] font-bold text-[#8C8275] bg-[#F6E6D0] px-2 py-0.2 rounded-full">
-                    👻 Tereliminasi (Tetap Bisa Kerjakan Task)
-                  </span>
-                )}
+                <span className="text-xs sm:text-sm font-black text-[#3A332C]">
+                  {currentRoom.toUpperCase()}
+                </span>
               </div>
-              <h3 className="text-sm sm:text-base font-black text-[#3A332C] mt-0.5">
-                Ruangan Saat Ini: <span className="text-[#50B5FF]">{currentRoom.toUpperCase()}</span>
-              </h3>
             </div>
           </div>
 
-          {/* Quick Impostor Cooldown Chip */}
-          {isImpostor && !isGhost && (
-            <div className="flex items-center gap-2">
-              <div className="px-3 py-1.5 rounded-xl bg-[#FFF0ED] border border-[#FFB2A1] text-xs font-black text-[#FF4D4D] flex items-center gap-1.5">
-                <Skull className="w-4 h-4" />
-                <span>
-                  Kill: {killCooldownSecs > 0 ? `${killCooldownSecs}s` : "SIAP!"}
-                </span>
+          {/* Right: Impostor Cooldown & Task Tray Toggle Button */}
+          <div className="flex items-center gap-2">
+            {isImpostor && !isGhost && (
+              <div className="px-2.5 py-1 rounded-xl bg-[#FFF0ED] border border-[#FFB2A1] text-xs font-black text-[#FF4D4D] flex items-center gap-1 shadow-2xs">
+                <Skull className="w-3.5 h-3.5" />
+                <span>{killCooldownSecs > 0 ? `${killCooldownSecs}s` : "SIAP!"}</span>
               </div>
-            </div>
-          )}
+            )}
+
+            <button
+              type="button"
+              onClick={() => setShowTasksTray((prev) => !prev)}
+              className={`px-3 py-1 rounded-xl text-xs font-black border transition flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs ${
+                showTasksTray
+                  ? "bg-[#50B5FF] text-white border-[#2B8EE0]"
+                  : "bg-[#FFF8EC] text-[#D97E00] border-[#FFA012]"
+              }`}
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Tugas ({myTasks.filter((t) => t.completed).length}/{myTasks.length})</span>
+            </button>
+          </div>
         </div>
 
         {/* Global Task Bar */}
         <div className="space-y-1">
-          <div className="flex items-center justify-between text-[11px] font-black text-[#8C8275]">
+          <div className="flex items-center justify-between text-[10px] font-black text-[#8C8275]">
             <span>TOTAL PROGRES TUGAS KAPAL</span>
             <span className="text-[#24A654]">
               {completedTasks} / {totalTasks} ({progressPercent}%)
             </span>
           </div>
-          <div className="w-full h-3.5 bg-[#FFF5E8] rounded-full border border-[#F0DDC5] overflow-hidden p-0.5">
+          <div className="w-full h-2.5 bg-[#FFF5E8] rounded-full border border-[#F0DDC5] overflow-hidden p-0.5">
             <div
               className="h-full bg-gradient-to-r from-[#89EFA9] to-[#24A654] rounded-full transition-all duration-500 shadow-inner"
               style={{ width: `${progressPercent}%` }}
@@ -586,15 +594,15 @@ export default function ImpostorGame({
 
         {/* Active Sabotage Alert Banner */}
         {activeSabotage && (
-          <div className="p-3 sm:p-3.5 bg-gradient-to-r from-[#FF4D4D] to-[#E64B2D] text-white rounded-2xl border-2 border-[#B82B10] flex items-center justify-between gap-3 shadow-md animate-pulse">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <AlertTriangle className="w-5 h-5 text-yellow-300 shrink-0 animate-bounce" />
+          <div className="p-2.5 sm:p-3 bg-gradient-to-r from-[#FF4D4D] to-[#E64B2D] text-white rounded-2xl border-2 border-[#B82B10] flex items-center justify-between gap-2 shadow-md animate-pulse">
+            <div className="flex items-center gap-2 min-w-0">
+              <AlertTriangle className="w-4 h-4 text-yellow-300 shrink-0 animate-bounce" />
               <div className="min-w-0">
-                <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider">
-                  ⚠️ SABOTASE: {activeSabotage.type.toUpperCase()} AKTIF!
+                <h4 className="text-xs font-black uppercase tracking-wider truncate">
+                  ⚠️ SABOTASE: {activeSabotage.type.toUpperCase()}!
                 </h4>
-                <p className="text-[11px] font-medium opacity-90 truncate">
-                  Segera menuju ke ruangan <strong>{activeSabotage.requiredRoom.toUpperCase()}</strong> untuk memperbaiki!
+                <p className="text-[10px] font-medium opacity-90 truncate">
+                  Segera ke <strong>{activeSabotage.requiredRoom.toUpperCase()}</strong>!
                 </p>
               </div>
             </div>
@@ -602,7 +610,7 @@ export default function ImpostorGame({
               <button
                 type="button"
                 onClick={handleFixSabotage}
-                className="btn-3d-peach text-xs font-black px-3 py-1.5 rounded-xl shrink-0 cursor-pointer"
+                className="btn-3d-peach text-[11px] font-black px-3 py-1 rounded-xl shrink-0 cursor-pointer shadow-sm"
               >
                 Perbaiki!
               </button>
@@ -611,195 +619,242 @@ export default function ImpostorGame({
         )}
       </div>
 
-      {/* 2. EMERGENCY MEETING MODAL / SCENE */}
-      {room?.status === "MEETING_PHASE" && (
-        <div className="clay-card p-5 sm:p-6 bg-white border-3 border-[#FF4D4D] space-y-5 shadow-2xl animate-pop-spring">
-          {/* Header Siren */}
-          <div className="flex items-center justify-between pb-3 border-b-2 border-[#F6E6D0]">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-2xl bg-[#FFF0ED] text-[#FF4D4D] border-2 border-[#FFB2A1] animate-bounce">
-                <Siren className="w-6 h-6" />
-              </div>
-              <div>
-                <span className="text-[10px] font-black uppercase text-[#FF4D4D] bg-[#FFF0ED] px-2 py-0.5 rounded-full border border-[#FFB2A1]">
-                  {activeMeeting?.reason === "DEAD_BODY" ? "💀 Mayat Ditemukan!" : "🚨 Emergency Meeting"}
-                </span>
-                <h2 className="text-lg sm:text-xl font-black text-[#3A332C] mt-0.5">
-                  Musyawarah Darurat Antariksa
-                </h2>
-                <p className="text-xs text-[#8C8275] font-semibold">
-                  {activeMeeting?.reason === "DEAD_BODY"
-                    ? `${activeMeeting?.reporterName} menemukan mayat ${activeMeeting?.victimName} di ${activeMeeting?.locationName?.toUpperCase()}!`
-                    : `${activeMeeting?.reporterName} menekan tombol darurat di Kafetaria!`}
-                </p>
-              </div>
+      {/* 2. COLLAPSIBLE TASK CHECKLIST TRAY */}
+      {showTasksTray && (
+        <div className="clay-card p-3.5 sm:p-4 bg-white border-2 border-[#F6E6D0] space-y-2 animate-pop-spring shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-[#24A654]" />
+              <span className="text-xs font-black uppercase text-[#3A332C]">
+                Daftar Tugas Astronot Anda ({myTasks.filter((t) => t.completed).length}/{myTasks.length})
+              </span>
             </div>
-
-            {isHost && (
-              <button
-                type="button"
-                onClick={handleSkipDiscussion}
-                className="flex items-center gap-1 text-xs font-black text-[#FFA012] bg-[#FFF8EC] border border-[#FFA012] hover:bg-[#FFEACD] px-3 py-1.5 rounded-xl transition cursor-pointer"
-              >
-                <FastForward className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Langsung Hitung Vote</span>
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => setShowTasksTray(false)}
+              className="text-[#8C8275] hover:text-[#3A332C] text-xs font-bold cursor-pointer"
+            >
+              ✕ Tutup
+            </button>
           </div>
-
-          {/* Voting Grid: All Players */}
-          <div className="space-y-2">
-            <span className="text-xs font-black text-[#3A332C] uppercase tracking-wider block">
-              Pilih Tersangka yang Ingin Diejeksi ke Luar Angkasa:
-            </span>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
-              {room?.players?.map((p) => {
-                const isDead = !p.isAlive;
-                const hasVoted = room.votes && !!room.votes[p.socketId];
-                const isMyVote = room.votes && room.votes[socket?.id] === p.socketId;
-
-                return (
-                  <button
-                    key={p.socketId}
-                    type="button"
-                    disabled={isDead || isGhost || (room.votes && !!room.votes[socket?.id])}
-                    onClick={() => handleCastVote(p.socketId)}
-                    className={`p-3 rounded-2xl border-2 transition flex flex-col items-center text-center gap-1.5 relative cursor-pointer active:scale-95 ${
-                      isDead
-                        ? "opacity-40 grayscale bg-[#FFFBF5] border-[#F0DDC5] cursor-not-allowed"
-                        : isMyVote
-                        ? "bg-[#FFF0ED] border-[#FF4D4D] ring-2 ring-[#FF4D4D]/30 shadow-md"
-                        : "bg-[#FFFBF5] border-[#F0DDC5] hover:border-[#50B5FF] hover:bg-[#EFF8FF]"
-                    }`}
-                  >
-                    <Avatar name={p.name} size="sm" />
-                    <span className="text-xs font-black text-[#3A332C] truncate max-w-full">
-                      {p.name}
-                    </span>
-                    {isDead && (
-                      <span className="text-[10px] font-black text-[#FF4D4D]">💀 Gugur</span>
-                    )}
-                    {hasVoted && (
-                      <span className="text-[9px] font-black bg-[#EDFCF2] text-[#24A654] border border-[#89EFA9] px-1.5 py-0.2 rounded-full">
-                        ✓ Memilih
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-
-              {/* Skip Vote Button */}
-              <button
-                type="button"
-                disabled={isGhost || (room.votes && !!room.votes[socket?.id])}
-                onClick={() => handleCastVote("SKIP")}
-                className={`p-3 rounded-2xl border-2 transition flex flex-col items-center justify-center text-center gap-1 cursor-pointer active:scale-95 ${
-                  room.votes && room.votes[socket?.id] === "SKIP"
-                    ? "bg-[#FFF8EC] border-[#FFA012] shadow-md ring-2 ring-[#FFA012]/30"
-                    : "bg-white border-[#F0DDC5] hover:bg-[#FFFBF5]"
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+            {myTasks.map((t) => (
+              <div
+                key={t.id}
+                className={`p-2.5 rounded-2xl border flex items-center justify-between gap-2 text-xs font-bold transition ${
+                  t.completed
+                    ? "bg-[#EDFCF2] text-[#24A654] border-[#89EFA9]"
+                    : "bg-[#FFFBF5] text-[#3A332C] border-[#F0DDC5]"
                 }`}
               >
-                <FastForward className="w-6 h-6 text-[#FFA012]" />
-                <span className="text-xs font-black text-[#3A332C]">Skip Vote</span>
-                <span className="text-[10px] text-[#8C8275] font-semibold">Lewati Pilihan</span>
-              </button>
-            </div>
+                <div className="flex items-center gap-2 min-w-0">
+                  <span
+                    className={`w-2 h-2 rounded-full shrink-0 ${
+                      t.completed ? "bg-[#24A654]" : "bg-[#FFA012] animate-pulse"
+                    }`}
+                  />
+                  <span className="truncate">{t.name}</span>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded-md uppercase font-black shrink-0 bg-white border border-[#F0DDC5]">
+                  {t.room}
+                </span>
+              </div>
+            ))}
           </div>
+        </div>
+      )}
 
-          {/* Real-Time Discussion Chat */}
-          <div className="space-y-2 pt-2 border-t border-[#F6E6D0]">
-            <span className="text-xs font-black text-[#3A332C] uppercase tracking-wider block">
-              Obrolan Diskusi Real-Time:
-            </span>
-            <div
-              ref={chatContainerRef}
-              className="h-32 overflow-y-auto p-3 bg-[#FFFBF5] rounded-2xl border border-[#F0DDC5] space-y-2 text-xs"
-            >
-              {(room?.discussionMessages || []).length === 0 ? (
-                <p className="text-[#8C8275] italic text-center py-4">
-                  Belum ada pesan. Saling tanyakan alibi dan lokasi rekanmu!
-                </p>
-              ) : (
-                room.discussionMessages.map((m, idx) => (
-                  <div key={idx} className="flex items-start gap-1.5">
-                    <span className="font-extrabold text-[#50B5FF] shrink-0">{m.senderName}:</span>
-                    <span className="text-[#3A332C] font-semibold break-words">{m.text}</span>
-                  </div>
-                ))
+      {/* 3. EMERGENCY MEETING MODAL OVERLAY */}
+      {room?.status === "MEETING_PHASE" && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/65 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
+          <div className="clay-card p-5 sm:p-6 bg-white border-3 border-[#FF4D4D] space-y-4 shadow-2xl animate-pop-spring max-w-2xl w-full my-auto">
+            {/* Header Siren */}
+            <div className="flex items-center justify-between pb-3 border-b-2 border-[#F6E6D0]">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="p-2.5 rounded-2xl bg-[#FFF0ED] text-[#FF4D4D] border-2 border-[#FFB2A1] animate-bounce shrink-0">
+                  <Siren className="w-6 h-6" />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[10px] font-black uppercase text-[#FF4D4D] bg-[#FFF0ED] px-2 py-0.5 rounded-full border border-[#FFB2A1]">
+                    {activeMeeting?.reason === "DEAD_BODY" ? "💀 Mayat Ditemukan!" : "🚨 Emergency Meeting"}
+                  </span>
+                  <h2 className="text-base sm:text-xl font-black text-[#3A332C] mt-0.5 truncate">
+                    Musyawarah Darurat Antariksa
+                  </h2>
+                  <p className="text-xs text-[#8C8275] font-semibold truncate">
+                    {activeMeeting?.reason === "DEAD_BODY"
+                      ? `${activeMeeting?.reporterName} menemukan mayat ${activeMeeting?.victimName} di ${activeMeeting?.locationName?.toUpperCase()}!`
+                      : `${activeMeeting?.reporterName} menekan tombol darurat di Kafetaria!`}
+                  </p>
+                </div>
+              </div>
+
+              {isHost && (
+                <button
+                  type="button"
+                  onClick={handleSkipDiscussion}
+                  className="flex items-center gap-1 text-xs font-black text-[#FFA012] bg-[#FFF8EC] border border-[#FFA012] hover:bg-[#FFEACD] px-3 py-1.5 rounded-xl transition cursor-pointer shrink-0"
+                >
+                  <FastForward className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Langsung Hitung</span>
+                </button>
               )}
             </div>
 
-            {/* Quick Chat Chips */}
-            <div className="flex flex-wrap gap-1.5 pt-1">
-              {[
-                "Di mana lokasinya?",
-                "Aku lagi di Medbay!",
-                "Aku tadi ngerjain kabel di Electrical!",
-                "Mencurigakan banget...",
-                "Skip dulu aja kali ini!",
-              ].map((chip, idx) => (
+            {/* Voting Grid: All Players */}
+            <div className="space-y-2">
+              <span className="text-xs font-black text-[#3A332C] uppercase tracking-wider block">
+                Pilih Tersangka yang Ingin Diejeksi ke Luar Angkasa:
+              </span>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 max-h-[36vh] overflow-y-auto p-1">
+                {room?.players?.map((p) => {
+                  const isDead = !p.isAlive;
+                  const hasVoted = room.votes && !!room.votes[p.socketId];
+                  const isMyVote = room.votes && room.votes[socket?.id] === p.socketId;
+
+                  return (
+                    <button
+                      key={p.socketId}
+                      type="button"
+                      disabled={isDead || isGhost || (room.votes && !!room.votes[socket?.id])}
+                      onClick={() => handleCastVote(p.socketId)}
+                      className={`p-2.5 sm:p-3 rounded-2xl border-2 transition flex flex-col items-center text-center gap-1.5 relative cursor-pointer active:scale-95 ${
+                        isDead
+                          ? "opacity-40 grayscale bg-[#FFFBF5] border-[#F0DDC5] cursor-not-allowed"
+                          : isMyVote
+                          ? "bg-[#FFF0ED] border-[#FF4D4D] ring-2 ring-[#FF4D4D]/30 shadow-md"
+                          : "bg-[#FFFBF5] border-[#F0DDC5] hover:border-[#50B5FF] hover:bg-[#EFF8FF]"
+                      }`}
+                    >
+                      <Avatar name={p.name} size="sm" />
+                      <span className="text-xs font-black text-[#3A332C] truncate max-w-full">
+                        {p.name}
+                      </span>
+                      {isDead && (
+                        <span className="text-[10px] font-black text-[#FF4D4D]">💀 Gugur</span>
+                      )}
+                      {hasVoted && (
+                        <span className="text-[9px] font-black bg-[#EDFCF2] text-[#24A654] border border-[#89EFA9] px-1.5 py-0.2 rounded-full">
+                          ✓ Memilih
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+
+                {/* Skip Vote Button */}
                 <button
-                  key={idx}
                   type="button"
-                  onClick={() => handleQuickChip(chip)}
-                  className="text-[11px] font-bold bg-white hover:bg-[#FFF5E8] text-[#8C8275] hover:text-[#3A332C] px-2.5 py-1 rounded-full border border-[#F0DDC5] transition cursor-pointer"
+                  disabled={isGhost || (room.votes && !!room.votes[socket?.id])}
+                  onClick={() => handleCastVote("SKIP")}
+                  className={`p-2.5 sm:p-3 rounded-2xl border-2 transition flex flex-col items-center justify-center text-center gap-1 cursor-pointer active:scale-95 ${
+                    room.votes && room.votes[socket?.id] === "SKIP"
+                      ? "bg-[#FFF8EC] border-[#FFA012] shadow-md ring-2 ring-[#FFA012]/30"
+                      : "bg-white border-[#F0DDC5] hover:bg-[#FFFBF5]"
+                  }`}
                 >
-                  {chip}
+                  <FastForward className="w-5 h-5 text-[#FFA012]" />
+                  <span className="text-xs font-black text-[#3A332C]">Skip Vote</span>
+                  <span className="text-[9px] text-[#8C8275] font-semibold">Lewati</span>
                 </button>
-              ))}
+              </div>
             </div>
 
-            {/* Chat Input */}
-            <form onSubmit={handleSendChat} className="flex gap-2">
-              <input
-                type="text"
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Ketik alibi atau kecurigaanmu..."
-                className="flex-1 px-3.5 py-2.5 rounded-xl border border-[#F0DDC5] text-xs font-semibold focus:outline-none focus:border-[#50B5FF] bg-white"
-              />
-              <button
-                type="submit"
-                className="btn-3d-blue text-xs font-black px-4 py-2.5 rounded-xl flex items-center gap-1 cursor-pointer"
+            {/* Real-Time Discussion Chat */}
+            <div className="space-y-2 pt-2 border-t border-[#F6E6D0]">
+              <div
+                ref={chatContainerRef}
+                className="h-28 overflow-y-auto p-2.5 bg-[#FFFBF5] rounded-2xl border border-[#F0DDC5] space-y-1.5 text-xs"
               >
-                <Send className="w-3.5 h-3.5" />
-                <span>Kirim</span>
-              </button>
-            </form>
+                {(room?.discussionMessages || []).length === 0 ? (
+                  <p className="text-[#8C8275] italic text-center py-3 text-xs">
+                    Belum ada pesan. Saling tanyakan alibi dan lokasi rekanmu!
+                  </p>
+                ) : (
+                  room.discussionMessages.map((m, idx) => (
+                    <div key={idx} className="flex items-start gap-1.5">
+                      <span className="font-extrabold text-[#50B5FF] shrink-0">{m.senderName}:</span>
+                      <span className="text-[#3A332C] font-semibold break-words">{m.text}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Quick Chat Chips */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px] no-scrollbar">
+                {[
+                  "Di mana lokasinya?",
+                  "Aku lagi di Medbay!",
+                  "Aku ngerjain kabel di Electrical!",
+                  "Mencurigakan banget...",
+                  "Skip dulu aja kali ini!",
+                ].map((chip, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleQuickChip(chip)}
+                    className="whitespace-nowrap px-2.5 py-1 rounded-full bg-white hover:bg-[#FFF5E8] text-[#8C8275] hover:text-[#3A332C] border border-[#F0DDC5] font-bold transition cursor-pointer shrink-0"
+                  >
+                    {chip}
+                  </button>
+                ))}
+              </div>
+
+              {/* Chat Input */}
+              <form onSubmit={handleSendChat} className="flex gap-2">
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  placeholder="Ketik alibi atau kecurigaanmu..."
+                  className="flex-1 px-3 py-2 rounded-xl border border-[#F0DDC5] text-xs font-semibold focus:outline-none focus:border-[#50B5FF] bg-white"
+                />
+                <button
+                  type="submit"
+                  disabled={!chatInput.trim()}
+                  className="btn-3d-blue text-xs font-black px-3.5 py-2 rounded-xl flex items-center gap-1 cursor-pointer disabled:opacity-40"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>Kirim</span>
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       )}
 
-      {/* 3. EJECTION RESULT MODAL OVERLAY */}
+      {/* 4. EJECTION RESULT MODAL OVERLAY */}
       {lastEjection && (
-        <div className="clay-card p-6 bg-gradient-to-b from-[#1F1B24] to-[#120F16] text-white border-2 border-[#9D5CFF] text-center space-y-4 shadow-2xl animate-pop-spring">
-          <div className="w-16 h-16 mx-auto rounded-3xl bg-white/10 flex items-center justify-center border border-white/20">
-            <Rocket className="w-8 h-8 text-[#50B5FF] animate-spin" />
-          </div>
-          <div className="space-y-1">
-            <h3 className="text-xl sm:text-2xl font-black tracking-tight text-yellow-300">
-              {lastEjection.ejectedName
-                ? `${lastEjection.ejectedName} Dilempar ke Luar Angkasa!`
-                : lastEjection.isTie
-                ? "Hasil Seri (Tie)! Tidak ada yang diejeksi."
-                : "Voting Dilewati (Skipped)! Tidak ada yang diejeksi."}
-            </h3>
-            <p className="text-sm font-extrabold text-white/90">
-              {lastEjection.ejectedName
-                ? lastEjection.wasImpostor
-                  ? `✓ ${lastEjection.ejectedName} adalah seorang IMPOSTOR!`
-                  : `✗ ${lastEjection.ejectedName} BUKAN Impostor.`
-                : "Semua astronot selamat di putaran ini."}
-            </p>
-            <p className="text-xs text-white/60 font-semibold pt-1">
-              ({lastEjection.remainingImpostors} Impostor tersisa)
-            </p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in">
+          <div className="clay-card p-6 bg-gradient-to-b from-[#1F1B24] to-[#120F16] text-white border-2 border-[#9D5CFF] text-center space-y-4 shadow-2xl animate-pop-spring max-w-md w-full">
+            <div className="w-16 h-16 mx-auto rounded-3xl bg-white/10 flex items-center justify-center border border-white/20">
+              <Rocket className="w-8 h-8 text-[#50B5FF] animate-spin" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-xl sm:text-2xl font-black tracking-tight text-yellow-300">
+                {lastEjection.ejectedName
+                  ? `${lastEjection.ejectedName} Dilempar ke Luar Angkasa!`
+                  : lastEjection.isTie
+                  ? "Hasil Seri (Tie)! Tidak ada yang diejeksi."
+                  : "Voting Dilewati (Skipped)! Tidak ada yang diejeksi."}
+              </h3>
+              <p className="text-sm font-extrabold text-white/90">
+                {lastEjection.ejectedName
+                  ? lastEjection.wasImpostor
+                    ? `✓ ${lastEjection.ejectedName} adalah seorang IMPOSTOR!`
+                    : `✗ ${lastEjection.ejectedName} BUKAN Impostor.`
+                  : "Semua astronot selamat di putaran ini."}
+              </p>
+              <p className="text-xs text-white/60 font-semibold pt-1">
+                ({lastEjection.remainingImpostors} Impostor tersisa)
+              </p>
+            </div>
           </div>
         </div>
       )}
 
-      {/* 4. REAL-TIME 2D SPACESHIP ARENA & HUD CONTROLS */}
-      <div className="relative rounded-3xl overflow-hidden border-2 border-[#F6E6D0] shadow-xl select-none">
+      {/* 5. REAL-TIME 2D SPACESHIP ARENA & HUD CONTROLS */}
+      <div className="relative rounded-3xl overflow-hidden border-2 border-[#F6E6D0] shadow-xl select-none w-full flex-1 min-h-[440px] sm:min-h-[540px] flex flex-col">
         {/* Canvas Arena */}
         <SpaceArenaCanvas
           room={room}
@@ -812,10 +867,11 @@ export default function ImpostorGame({
           joystickVector={joystickVector}
           activeSabotage={activeSabotage}
           onProximityChange={setProximity}
+          className="w-full h-full min-h-[440px] sm:min-h-[540px] flex-1 rounded-3xl block shadow-inner bg-[#0B0D1B] touch-none cursor-crosshair"
         />
 
         {/* Floating Controls Overlay: Virtual Joystick (Bottom Left) */}
-        <div className="absolute bottom-4 left-4 z-20 pointer-events-auto">
+        <div className="absolute bottom-4 left-4 sm:left-6 z-20 pointer-events-auto">
           <VirtualJoystick
             onMove={setJoystickVector}
             onStop={() => setJoystickVector({ x: 0, y: 0 })}
@@ -825,7 +881,7 @@ export default function ImpostorGame({
         </div>
 
         {/* Floating Controls Overlay: Proximity Action Buttons (Bottom Right) */}
-        <div className="absolute bottom-4 right-4 z-20 flex flex-col items-end gap-2.5 pointer-events-auto">
+        <div className="absolute bottom-4 right-4 sm:right-6 z-20 flex flex-col items-end gap-2.5 pointer-events-auto">
           {/* Top row of secondary action buttons (Vent & Sabotage for Impostor) */}
           {isImpostor && !isGhost && (
             <div className="flex items-center gap-2">
@@ -948,43 +1004,8 @@ export default function ImpostorGame({
         {/* Bottom Center Movement & Hotkeys Guide */}
         <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 pointer-events-none hidden sm:block">
           <span className="text-[10px] font-extrabold text-white/90 bg-black/55 px-4 py-1.5 rounded-full backdrop-blur-xs border border-white/20 shadow-md">
-            Tap peta untuk jalan • WASD / Joystick • [E] Use • [Q] Kill • [R] Report • [V] Vent
+            Tap peta • Joystick • [E] Use • [Q] Kill • [R] Report • [V] Vent
           </span>
-        </div>
-      </div>
-
-      {/* 5. SHIP ASSIGNED TASKS CHECKLIST (COLLAPSIBLE TRAY) */}
-      <div className="clay-card p-3.5 sm:p-4 bg-white border-2 border-[#F6E6D0] space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-[#24A654]" />
-            <span className="text-xs font-black uppercase text-[#3A332C]">
-              Daftar Tugas Astronot Anda ({myTasks.filter((t) => t.completed).length}/{myTasks.length})
-            </span>
-          </div>
-          <span className="text-[11px] font-bold text-[#8C8275]">
-            Dekati konsol di ruangan untuk menyelesaikan tugas
-          </span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-          {myTasks.map((t) => (
-            <div
-              key={t.id}
-              className={`p-2.5 rounded-2xl border flex items-center justify-between gap-2 text-xs font-bold transition ${
-                t.completed
-                  ? "bg-[#EDFCF2] text-[#24A654] border-[#89EFA9]"
-                  : "bg-[#FFFBF5] text-[#3A332C] border-[#F0DDC5]"
-              }`}
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <span className={`w-2 h-2 rounded-full shrink-0 ${t.completed ? "bg-[#24A654]" : "bg-[#FFA012] animate-pulse"}`} />
-                <span className="truncate">{t.name}</span>
-              </div>
-              <span className="text-[10px] px-2 py-0.5 rounded-md uppercase font-black shrink-0 bg-white border border-[#F0DDC5]">
-                {t.room}
-              </span>
-            </div>
-          ))}
         </div>
       </div>
 

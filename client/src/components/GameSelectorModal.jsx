@@ -14,7 +14,7 @@ export default function GameSelectorModal({
   const games = getAvailableGames();
 
   const modalContent = (
-    <div className="fixed inset-0 z-[999] min-h-[100dvh] w-screen flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-[999] min-h-[100dvh] w-full flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
       <div className="clay-card p-6 sm:p-8 max-w-2xl w-full m-auto bg-white space-y-5 border-2 border-[#F6E6D0] max-h-[90vh] flex flex-col shadow-2xl animate-pop-spring">
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b-2 border-[#F6E6D0]">
@@ -162,5 +162,10 @@ export default function GameSelectorModal({
     </div>
   );
 
-  return typeof document !== "undefined" ? createPortal(modalContent, document.body) : modalContent;
+  const targetContainer =
+    typeof document !== "undefined"
+      ? document.fullscreenElement || document.body
+      : null;
+
+  return targetContainer ? createPortal(modalContent, targetContainer) : modalContent;
 }

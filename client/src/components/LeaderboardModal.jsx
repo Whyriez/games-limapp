@@ -73,7 +73,7 @@ export default function LeaderboardModal({
   const isDrawGuessTab = activeTab === "drawguess";
 
   const modalContent = (
-    <div className="fixed inset-0 z-[999] min-h-[100dvh] w-screen flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 sm:p-5 overflow-y-auto animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-[999] min-h-[100dvh] w-full flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 sm:p-5 overflow-y-auto animate-in fade-in duration-150">
       <div className="clay-card w-full max-w-5xl m-auto rounded-[32px] p-5 sm:p-7 border-2 border-[#F6E6D0] shadow-2xl animate-pop-spring relative bg-white max-h-[92vh] flex flex-col space-y-3 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between pb-3.5 border-b-2 border-[#F6E6D0] shrink-0">
@@ -438,5 +438,10 @@ export default function LeaderboardModal({
     </div>
   );
 
-  return typeof document !== "undefined" ? createPortal(modalContent, document.body) : modalContent;
+  const targetContainer =
+    typeof document !== "undefined"
+      ? document.fullscreenElement || document.body
+      : null;
+
+  return targetContainer ? createPortal(modalContent, targetContainer) : modalContent;
 }

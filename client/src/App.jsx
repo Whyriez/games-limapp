@@ -16,6 +16,8 @@ import ActiveGameBanner from "./components/ActiveGameBanner";
 import GameSelectorModal from "./components/GameSelectorModal";
 import LandingHub from "./components/LandingHub";
 import UndercoverOffline from "./games/undercover/UndercoverOffline";
+import GameCanvasWrapper from "./components/GameCanvasWrapper";
+import DevPuppetToolbar from "./components/DevPuppetToolbar";
 
 import {
   ShieldAlert,
@@ -113,6 +115,16 @@ export default function App() {
   const [gameOverData, setGameOverData] = useState(null);
   const [pendingGameOverData, setPendingGameOverData] = useState(null);
   const [showCancelGameModal, setShowCancelGameModal] = useState(false);
+  const [isFocusMode, setIsFocusMode] = useState(true);
+
+  // Dev Mode & Puppet Switcher State
+  const isDevMode = Boolean(
+    import.meta.env.DEV ||
+    import.meta.env.VITE_DEV_MODE === "true" ||
+    (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"))
+  );
+  const [activePuppetSocketId, setActivePuppetSocketId] = useState(null);
+  const [devPuppetData, setDevPuppetData] = useState({});
 
   // Alert & Modals
   const [bannerAlert, setBannerAlert] = useState(null);
@@ -713,6 +725,11 @@ export default function App() {
       }
     });
 
+    // Dev Mode Puppet Sync
+    socket.on("dev:puppet_sync", (data) => {
+      setDevPuppetData(data || {});
+    });
+
     return () => {
       socket.off("room:updated");
       socket.off("room:game_changed");
@@ -748,8 +765,15 @@ export default function App() {
       socket.off("game:over");
       socket.off("host:migrated");
       socket.off("error:message");
+      socket.off("dev:puppet_sync");
     };
   }, [identity.playerId, identity.cachedName]);
+
+  // Dev mode auto-sync puppet states whenever room or turn changes
+  useEffect(() => {
+    if (!isDevMode || !room?.id) return;
+    socket.emit("dev:get_puppet_states", { roomId: room.id });
+  }, [isDevMode, room?.id, room?.status, currentTurnSocketId]);
 
   // Auto-scroll Lobby chat container
   useEffect(() => {
@@ -815,44 +839,99 @@ export default function App() {
     socket.emit("room:add_bot", { roomId: room.id });
   };
 
+  const handleAddBotsBatch = (count = 3) => {
+    if (!room) return;
+    socket.emit("room:add_bots_batch", { roomId: room.id, count });
+  };
+
   const handleRemoveBot = (botSocketId) => {
     if (!room) return;
     socket.emit("room:remove_bot", { roomId: room.id, botSocketId });
+    if (activePuppetSocketId === botSocketId) setActivePuppetSocketId(null);
+  };
+
+  const handleRemoveAllBots = () => {
+    if (!room) return;
+    socket.emit("room:remove_all_bots", { roomId: room.id });
+    if (activePuppetSocketId) setActivePuppetSocketId(null);
+  };
+
+  const handleDevQuickAction = (actionType, payload = {}) => {
+    if (!room) return;
+    if (actionType === "ready") {
+      socket.emit("player:ready", { roomId: room.id, asSocketId: payload.asSocketId });
+    } else if (actionType === "ready_all_bots") {
+      (payload.botSocketIds || []).forEach((botId) => {
+        socket.emit("player:ready", { roomId: room.id, asSocketId: botId });
+      });
+    } else if (actionType === "discussion_ready") {
+      socket.emit("discussion:ready_toggle", { roomId: room.id, asSocketId: payload.asSocketId });
+    } else if (actionType === "discussion_ready_all_bots") {
+      (payload.botSocketIds || []).forEach((botId) => {
+        socket.emit("discussion:ready_toggle", { roomId: room.id, asSocketId: botId });
+      });
+    } else if (actionType === "clue") {
+      socket.emit("clue:send", { roomId: room.id, text: payload.text, asSocketId: payload.asSocketId });
+    } else if (actionType === "vote") {
+      socket.emit("vote:submit", {
+        roomId: room.id,
+        targetSocketId: payload.targetSocketId,
+        asSocketId: payload.asSocketId,
+      });
+    }
   };
 
   const handleReturnToLobby = () => {
     if (!room) return;
     socket.emit("room:return_lobby", { roomId: room.id });
+    setActivePuppetSocketId(null);
   };
 
   const handleConfirmCancelGame = () => {
     if (!room) return;
     socket.emit("room:return_lobby", { roomId: room.id });
     setShowCancelGameModal(false);
+    setActivePuppetSocketId(null);
   };
 
-
   const handleMarkReady = () => {
-    if (!room || isReadyConfirmed) return;
-    setIsReadyConfirmed(true);
-    socket.emit("player:ready", { roomId: room.id });
+    if (!room) return;
+    if (!activePuppetSocketId) {
+      if (isReadyConfirmed) return;
+      setIsReadyConfirmed(true);
+    }
+    socket.emit("player:ready", {
+      roomId: room.id,
+      asSocketId: activePuppetSocketId || undefined,
+    });
   };
 
   const handleToggleDiscussionReady = () => {
     if (!room || room.status !== "DISCUSSION_PHASE") return;
-    socket.emit("discussion:ready_toggle", { roomId: room.id });
+    socket.emit("discussion:ready_toggle", {
+      roomId: room.id,
+      asSocketId: activePuppetSocketId || undefined,
+    });
   };
 
   const handleSendClue = (e) => {
     if (e) e.preventDefault();
     if (!clueInput.trim() || !room) return;
-    socket.emit("clue:send", { roomId: room.id, text: clueInput.trim() });
+    socket.emit("clue:send", {
+      roomId: room.id,
+      text: clueInput.trim(),
+      asSocketId: activePuppetSocketId || undefined,
+    });
     setClueInput("");
   };
 
   const handleSendDiscussionMessage = (text) => {
     if (!room || !text) return;
-    socket.emit("discussion:send", { roomId: room.id, text });
+    socket.emit("discussion:send", {
+      roomId: room.id,
+      text,
+      asSocketId: activePuppetSocketId || undefined,
+    });
   };
 
   const handleSendLobbyMessage = (e) => {
@@ -875,9 +954,16 @@ export default function App() {
   };
 
   const handleCastVote = (targetSocketId) => {
-    if (votedTarget || !room) return;
-    setVotedTarget(targetSocketId);
-    socket.emit("vote:submit", { roomId: room.id, targetSocketId });
+    if (!room) return;
+    if (!activePuppetSocketId) {
+      if (votedTarget) return;
+      setVotedTarget(targetSocketId);
+    }
+    socket.emit("vote:submit", {
+      roomId: room.id,
+      targetSocketId,
+      asSocketId: activePuppetSocketId || undefined,
+    });
   };
 
   const handleMrWhiteSubmit = (e) => {
@@ -886,6 +972,7 @@ export default function App() {
     socket.emit("mrwhite:guess_submit", {
       roomId: room.id,
       guessText: mrWhiteInput.trim(),
+      asSocketId: activePuppetSocketId || undefined,
     });
     setMrWhiteInput("");
   };
@@ -993,8 +1080,8 @@ export default function App() {
       (identity.playerId && p.playerId === identity.playerId) ||
       (nickname && p.name && p.name.trim().toLowerCase() === nickname.trim().toLowerCase()),
   );
-  const isSpectator = myPlayerObj ? !!myPlayerObj.isSpectator : false;
-  const isMyPlayerAlive = myPlayerObj ? myPlayerObj.isAlive && !myPlayerObj.isSpectator : true;
+  const myIsSpectator = myPlayerObj ? !!myPlayerObj.isSpectator : false;
+  const myIsPlayerAlive = myPlayerObj ? myPlayerObj.isAlive && !myPlayerObj.isSpectator : true;
 
   const isMyTurn = Boolean(
     (currentTurnSocketId && currentTurnSocketId === socket.id) ||
@@ -1009,8 +1096,79 @@ export default function App() {
     (identity.playerId && room?.hostPlayerId && identity.playerId === room.hostPlayerId),
   );
 
+  // Puppet Switcher Effective States (Dev Mode)
+  const effectiveSocketId = activePuppetSocketId || socket.id;
+  const activePuppetObj = activePuppetSocketId
+    ? room?.players?.find((p) => p.socketId === activePuppetSocketId)
+    : null;
+  const activePuppetState = activePuppetSocketId ? devPuppetData[activePuppetSocketId] : null;
+
+  const effectivePlayerObj = activePuppetObj || myPlayerObj;
+  const effectiveIsSpectator = activePuppetObj ? !!activePuppetObj.isSpectator : myIsSpectator;
+  const effectiveIsMyPlayerAlive = activePuppetObj ? activePuppetObj.isAlive && !activePuppetObj.isSpectator : myIsPlayerAlive;
+
+  const effectiveIsMyTurn = Boolean(
+    (currentTurnSocketId && currentTurnSocketId === effectiveSocketId) ||
+    (effectivePlayerObj && currentTurnSocketId && effectivePlayerObj.socketId === currentTurnSocketId) ||
+    (!activePuppetSocketId && isMyTurn)
+  );
+
+  const effectiveRoleData = (activePuppetSocketId && activePuppetState) ? {
+    role: activePuppetState.role,
+    word: activePuppetState.word,
+    isWinner: activePuppetState.isWinner,
+    cards: activePuppetState.cards,
+    tasks: activePuppetState.tasks,
+    currentRoom: activePuppetState.currentRoom,
+    isImpostor: activePuppetState.isImpostor,
+    isGhost: activePuppetState.isGhost,
+    ...activePuppetState,
+  } : myRoleData;
+
+  const effectiveIsReadyConfirmed = activePuppetSocketId
+    ? Boolean(readyStats.readySocketIds && readyStats.readySocketIds.includes(activePuppetSocketId))
+    : isReadyConfirmed;
+
+  const effectiveIsDiscussionReady = activePuppetSocketId
+    ? Boolean(discussionReadyStats.readySocketIds && discussionReadyStats.readySocketIds.includes(activePuppetSocketId))
+    : isDiscussionReady;
+
+  const effectiveVotedTarget = activePuppetSocketId
+    ? (room?.votes ? room.votes[activePuppetSocketId] : null)
+    : votedTarget;
+
   const GameComponent = activeGameMeta.GameComponent;
   const RulesComponent = activeGameMeta.RulesComponent;
+
+  // Active Timer calculation for current room phase
+  let activeTimerEndsAt = null;
+  let activeTimerDuration = 25;
+
+  if (room?.status === "MEMORIZE_PHASE") {
+    activeTimerEndsAt = memorizeEndsAt;
+    activeTimerDuration = 25;
+  } else if (room?.status === "CLUE_PHASE") {
+    activeTimerEndsAt = currentTurnEndsAt;
+    activeTimerDuration = 25;
+  } else if (room?.status === "DISCUSSION_PHASE") {
+    activeTimerEndsAt = discussionEndsAt;
+    activeTimerDuration = 120;
+  } else if (room?.status === "INQUIRY_PHASE") {
+    activeTimerEndsAt = inquiryEndsAt;
+    activeTimerDuration = (room.settings?.roundDurationMinutes || 5) * 60;
+  } else if (room?.status === "NIGHT_PHASE") {
+    activeTimerEndsAt = nightEndsAt;
+    activeTimerDuration = 25;
+  } else if (room?.status === "DAY_PHASE") {
+    activeTimerEndsAt = dayDiscussionEndsAt;
+    activeTimerDuration = room.settings?.dayDiscussionSeconds || 90;
+  } else if (room?.status === "WORD_CHOICE_PHASE") {
+    activeTimerEndsAt = choiceEndsAt;
+    activeTimerDuration = 15;
+  } else if (room?.status === "DRAWING_PHASE") {
+    activeTimerEndsAt = drawEndsAt;
+    activeTimerDuration = room.settings?.drawTimeLimit || 60;
+  }
 
   if (isCamouflaged) {
     return <WorkplaceCamouflage onDismiss={() => setIsCamouflaged(false)} />;
@@ -1109,7 +1267,7 @@ export default function App() {
               </button>
             </div>
           </div>,
-          document.body
+          document.fullscreenElement || document.body
         )}
 
         {!isJoined ? (
@@ -1132,6 +1290,24 @@ export default function App() {
         ) : (
           /* ================= SCREEN 2: ACTIVE ROOM ================= */
           <div className="flex-1 flex flex-col space-y-4">
+            {/* Dev Mode Puppet Switcher & Bot Manager (Dev Mode Only) */}
+            {isDevMode && (
+              <DevPuppetToolbar
+                room={room}
+                currentSocketId={socket.id}
+                activePuppetSocketId={activePuppetSocketId}
+                devPuppetData={devPuppetData}
+                onSelectPuppet={setActivePuppetSocketId}
+                onAddBot={handleAddBot}
+                onAddBotsBatch={handleAddBotsBatch}
+                onRemoveBot={handleRemoveBot}
+                onRemoveAllBots={handleRemoveAllBots}
+                onQuickAction={handleDevQuickAction}
+                currentTurnSocketId={currentTurnSocketId}
+                isHost={isHost}
+              />
+            )}
+
             {room?.status === "LOBBY" ? (
               /* 1. LOBBY MODE */
               <div className="space-y-4">
@@ -1161,9 +1337,9 @@ export default function App() {
                       onStartGame={handleStartGame}
                       onUpdateSettings={handleUpdateSettings}
                       onAddBot={handleAddBot}
+                      onAddBotsBatch={handleAddBotsBatch}
                       onRemoveBot={handleRemoveBot}
                     />
-
                   </div>
 
                   {/* Right Column: Live Chat & Rules Tab */}
@@ -1358,87 +1534,133 @@ export default function App() {
                 />
               </div>
             ) : (
-              /* 3. ACTIVE GAMEPLAY MODE (Game interaction is rendered FIRST on mobile) */
-              <div className="flex flex-col md:grid md:grid-cols-12 gap-5 lg:gap-8 items-start">
-                {/* Right Column: Dynamic In-Game Component (Order 1 on Mobile) */}
-                <div className="order-1 md:order-2 md:col-span-7 lg:col-span-8 flex flex-col gap-4 sm:gap-5 w-full">
-                  {/* Spectator Waiting Banner */}
-                  {isSpectator && (
-                    <div className="p-3.5 sm:p-4 bg-gradient-to-r from-[#FFF8EC] to-[#FFF0ED] border-2 border-[#FFA012] rounded-3xl flex items-center gap-3.5 shadow-sm animate-pop-spring">
-                      <div className="p-2 sm:p-2.5 bg-white rounded-2xl text-[#FFA012] border border-[#FFA012]/40 shrink-0 animate-bounce">
-                        <Eye className="w-5 h-5 sm:w-6 sm:h-6 text-[#FFA012]" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-xs sm:text-sm font-black text-[#3A332C]">
-                          👀 Anda Berada di Ruang Tunggu (Sedang Menonton Game)
-                        </h4>
-                        <p className="text-[11px] sm:text-xs text-[#8C8275] font-semibold mt-0.5 leading-tight">
-                          Anda bergabung di tengah game yang sedang berlangsung. Anda otomatis ikut bermain saat game berikutnya dimulai!
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Render the Active Game Component */}
-                  {GameComponent && (
-                    <GameComponent
-                      room={room}
-                      socket={socket}
-                      identity={identity}
-                      nickname={nickname}
-                      myRoleData={myRoleData}
-                      isHost={isHost}
-                      isSpectator={isSpectator}
-                      isMyPlayerAlive={isMyPlayerAlive}
-                      isMyTurn={isMyTurn}
-                      currentTurnName={currentTurnName}
-                      currentTurnSocketId={currentTurnSocketId}
-                      currentTurnPlayerId={currentTurnPlayerId}
-                      clueInput={clueInput}
-                      onClueInputChange={setClueInput}
-                      onSendClue={handleSendClue}
-                      isReadyConfirmed={isReadyConfirmed}
-                      readyStats={readyStats}
-                      onMarkReady={handleMarkReady}
-                      discussionEndsAt={discussionEndsAt}
-                      isDiscussionReady={isDiscussionReady}
-                      discussionReadyStats={discussionReadyStats}
-                      onToggleDiscussionReady={handleToggleDiscussionReady}
-                      onSendDiscussionMessage={handleSendDiscussionMessage}
-                      onSkipDiscussionToVoting={handleSkipDiscussionToVoting}
-                      votingCandidates={votingCandidates}
-                      votingEndsAt={votingEndsAt}
-                      votedTarget={votedTarget}
-                      voteStats={voteStats}
-                      onCastVote={handleCastVote}
-                      mrWhiteGuessTarget={mrWhiteGuessTarget}
-                      mrWhiteInput={mrWhiteInput}
-                      onMrWhiteInputChange={setMrWhiteInput}
-                      onSubmitMrWhiteGuess={handleMrWhiteSubmit}
-                    />
-                  )}
-                </div>
-
-                {/* Left Column: Player List (Order 2 on Mobile) */}
-                <div className="order-2 md:order-1 md:col-span-5 lg:col-span-4 w-full">
-                  <PlayerList
-                    players={room?.players || []}
-                    hostId={room?.hostId}
-                    currentSocketId={socket.id}
-                    currentPlayerId={identity.playerId}
-                    currentNickname={nickname}
+              /* 3. ACTIVE GAMEPLAY MODE (Dedicated Game Canvas & Focus Mode) */
+              <div
+                className={`w-full ${
+                  isFocusMode
+                    ? "flex flex-col"
+                    : "flex flex-col md:grid md:grid-cols-12 gap-5 lg:gap-8 items-start"
+                }`}
+              >
+                {/* Dynamic In-Game Component wrapped in Dedicated Game Canvas */}
+                <div
+                  className={`w-full ${
+                    isFocusMode
+                      ? "w-full"
+                      : "order-1 md:order-2 md:col-span-7 lg:col-span-8 flex flex-col gap-4 sm:gap-5"
+                  }`}
+                >
+                  <GameCanvasWrapper
+                    activeGameMeta={activeGameMeta}
+                    room={room}
+                    socket={socket}
+                    identity={identity}
+                    nickname={nickname}
+                    isHost={isHost}
+                    isSpectator={effectiveIsSpectator}
+                    isMyPlayerAlive={effectiveIsMyPlayerAlive}
+                    soundMuted={soundMuted}
+                    onToggleSound={handleToggleSound}
+                    onCancelGame={() => setShowCancelGameModal(true)}
+                    onLeaveRoom={handleLeaveRoom}
+                    onCamouflage={() => setIsCamouflaged(true)}
+                    timerEndsAt={activeTimerEndsAt}
+                    timerDuration={activeTimerDuration}
+                    discussionMessages={room?.discussionMessages || []}
+                    onSendMessage={handleSendDiscussionMessage}
                     currentTurnSocketId={currentTurnSocketId}
                     currentTurnPlayerId={currentTurnPlayerId}
-                    status={room?.status}
-                    gameType={activeGameType}
-                    isHost={isHost}
-                    settings={room?.settings}
-                    discussionReadySocketIds={discussionReadyStats.readySocketIds}
-                    onStartGame={handleStartGame}
-                    onUpdateSettings={handleUpdateSettings}
-                    onCancelGame={() => setShowCancelGameModal(true)}
-                  />
+                    isFocusMode={isFocusMode}
+                    onToggleFocusMode={() => setIsFocusMode((prev) => !prev)}
+                    activePuppetSocketId={activePuppetSocketId}
+                    activePuppetName={activePuppetObj?.name}
+                    onClearPuppet={() => setActivePuppetSocketId(null)}
+                  >
+                    {/* Spectator Waiting Banner */}
+                    {effectiveIsSpectator && (
+                      <div className="p-3.5 sm:p-4 bg-gradient-to-r from-[#FFF8EC] to-[#FFF0ED] border-2 border-[#FFA012] rounded-3xl flex items-center gap-3.5 shadow-sm animate-pop-spring mb-3">
+                        <div className="p-2 sm:p-2.5 bg-white rounded-2xl text-[#FFA012] border border-[#FFA012]/40 shrink-0 animate-bounce">
+                          <Eye className="w-5 h-5 sm:w-6 sm:h-6 text-[#FFA012]" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-xs sm:text-sm font-black text-[#3A332C]">
+                            👀 Anda Berada di Ruang Tunggu (Sedang Menonton Game)
+                          </h4>
+                          <p className="text-[11px] sm:text-xs text-[#8C8275] font-semibold mt-0.5 leading-tight">
+                            Anda bergabung di tengah game yang sedang berlangsung. Anda otomatis ikut bermain saat game berikutnya dimulai!
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Render the Active Game Component */}
+                    {GameComponent && (
+                      <GameComponent
+                        room={room}
+                        socket={socket}
+                        identity={identity}
+                        nickname={nickname}
+                        myRoleData={effectiveRoleData}
+                        currentSocketId={effectiveSocketId}
+                        asSocketId={activePuppetSocketId}
+                        isHost={isHost}
+                        isSpectator={effectiveIsSpectator}
+                        isMyPlayerAlive={effectiveIsMyPlayerAlive}
+                        isMyTurn={effectiveIsMyTurn}
+                        currentTurnName={currentTurnName}
+                        currentTurnSocketId={currentTurnSocketId}
+                        currentTurnPlayerId={currentTurnPlayerId}
+                        clueInput={clueInput}
+                        onClueInputChange={setClueInput}
+                        onSendClue={handleSendClue}
+                        isReadyConfirmed={effectiveIsReadyConfirmed}
+                        readyStats={readyStats}
+                        onMarkReady={handleMarkReady}
+                        discussionEndsAt={discussionEndsAt}
+                        isDiscussionReady={effectiveIsDiscussionReady}
+                        discussionReadyStats={discussionReadyStats}
+                        onToggleDiscussionReady={handleToggleDiscussionReady}
+                        onSendDiscussionMessage={handleSendDiscussionMessage}
+                        onSkipDiscussionToVoting={handleSkipDiscussionToVoting}
+                        votingCandidates={votingCandidates}
+                        votingEndsAt={votingEndsAt}
+                        votedTarget={effectiveVotedTarget}
+                        voteStats={voteStats}
+                        onCastVote={handleCastVote}
+                        mrWhiteGuessTarget={mrWhiteGuessTarget}
+                        mrWhiteInput={mrWhiteInput}
+                        onMrWhiteInputChange={setMrWhiteInput}
+                        onSubmitMrWhiteGuess={handleMrWhiteSubmit}
+                      />
+                    )}
+                  </GameCanvasWrapper>
                 </div>
+
+                {/* Left Column: Player List (Only rendered when not in focus mode) */}
+                {!isFocusMode && (
+                  <div className="order-2 md:order-1 md:col-span-5 lg:col-span-4 w-full">
+                    <PlayerList
+                      players={room?.players || []}
+                      hostId={room?.hostId}
+                      currentSocketId={effectiveSocketId}
+                      currentPlayerId={identity.playerId}
+                      currentNickname={nickname}
+                      currentTurnSocketId={currentTurnSocketId}
+                      currentTurnPlayerId={currentTurnPlayerId}
+                      status={room?.status}
+                      gameType={activeGameType}
+                      isHost={isHost}
+                      settings={room?.settings}
+                      discussionReadySocketIds={discussionReadyStats.readySocketIds}
+                      onStartGame={handleStartGame}
+                      onUpdateSettings={handleUpdateSettings}
+                      onCancelGame={() => setShowCancelGameModal(true)}
+                      onAddBot={handleAddBot}
+                      onAddBotsBatch={handleAddBotsBatch}
+                      onRemoveBot={handleRemoveBot}
+                    />
+                  </div>
+                )}
               </div>
             )}
 
@@ -1548,7 +1770,7 @@ export default function App() {
 
       {/* Confirmation Modal for Cancelling/Aborting Active Game */}
       {showCancelGameModal && typeof document !== "undefined" && createPortal(
-        <div className="fixed inset-0 z-[9999] min-h-[100dvh] w-screen flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-[9999] min-h-[100dvh] w-full flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
           <div className="clay-card p-6 sm:p-7 max-w-md w-full m-auto bg-white space-y-4 border-3 border-[#FFB2A1] shadow-2xl animate-pop-spring text-center">
             <div className="w-14 h-14 mx-auto rounded-3xl bg-[#FFF0ED] border-2 border-[#FFB2A1] flex items-center justify-center text-[#E64B2D] shadow-xs">
               <AlertTriangle className="w-7 h-7 animate-bounce" />
@@ -1582,7 +1804,7 @@ export default function App() {
             </div>
           </div>
         </div>,
-        document.body
+        document.fullscreenElement || document.body
       )}
     </div>
   );

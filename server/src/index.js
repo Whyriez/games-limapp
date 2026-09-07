@@ -359,6 +359,24 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok", timestamp: Date.now() });
 });
 
+// Helper to determine acting player ID (supports dev puppet switcher for bots)
+function getActingSocketId(socket, roomId, asSocketId) {
+  if (!asSocketId || asSocketId === socket.id) {
+    return socket.id;
+  }
+  const room = gameManager.rooms.get(roomId);
+  if (!room) return socket.id;
+
+  const isDev = process.env.NODE_ENV !== "production" || process.env.DEV_MODE === "true";
+  const isHost = room.hostId === socket.id;
+  const targetPlayer = room.players.find((p) => p.socketId === asSocketId);
+
+  if ((isHost || isDev) && targetPlayer && targetPlayer.isBot) {
+    return asSocketId;
+  }
+  return socket.id;
+}
+
 io.on("connection", (socket) => {
   // Create Room
   socket.on("room:create", ({ roomId, name, playerId, gameType }) => {
@@ -405,6 +423,14 @@ io.on("connection", (socket) => {
     }
   });
 
+  // Batch Add Bots (Dev Mode or Host Quick Setup)
+  socket.on("room:add_bots_batch", ({ roomId, count = 3 }) => {
+    const result = gameManager.addBot(roomId, socket.id, count);
+    if (result && result.error) {
+      socket.emit("error:message", result.error);
+    }
+  });
+
   socket.on("room:remove_bot", ({ roomId, botSocketId }) => {
     const result = gameManager.removeBot(roomId, socket.id, botSocketId);
     if (result && result.error) {
@@ -412,6 +438,20 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on("room:remove_all_bots", ({ roomId }) => {
+    const result = gameManager.removeAllBots(roomId, socket.id);
+    if (result && result.error) {
+      socket.emit("error:message", result.error);
+    }
+  });
+
+  // Dev Puppet States Sync
+  socket.on("dev:get_puppet_states", ({ roomId }) => {
+    const states = gameManager.getDevPuppetStates(roomId, socket.id);
+    if (states) {
+      socket.emit("dev:puppet_sync", states);
+    }
+  });
 
   // Start Game
   socket.on("game:start", ({ roomId }) => {
@@ -430,23 +470,27 @@ io.on("connection", (socket) => {
   });
 
   // Player Ready Confirmation in MEMORIZE_PHASE
-  socket.on("player:ready", ({ roomId }) => {
-    gameManager.markPlayerReady(roomId, socket.id);
+  socket.on("player:ready", ({ roomId, asSocketId }) => {
+    const actingId = getActingSocketId(socket, roomId, asSocketId);
+    gameManager.markPlayerReady(roomId, actingId);
   });
 
   // Player Ready Confirmation in DISCUSSION_PHASE
-  socket.on("discussion:ready_toggle", ({ roomId }) => {
-    gameManager.toggleDiscussionReady(roomId, socket.id);
+  socket.on("discussion:ready_toggle", ({ roomId, asSocketId }) => {
+    const actingId = getActingSocketId(socket, roomId, asSocketId);
+    gameManager.toggleDiscussionReady(roomId, actingId);
   });
 
   // Submit Official Turn Clue (Undercover)
-  socket.on("clue:send", ({ roomId, text }) => {
-    gameManager.submitClue(roomId, socket.id, text);
+  socket.on("clue:send", ({ roomId, text, asSocketId }) => {
+    const actingId = getActingSocketId(socket, roomId, asSocketId);
+    gameManager.submitClue(roomId, actingId, text);
   });
 
   // Submit Free Discussion Chat Message
-  socket.on("discussion:send", ({ roomId, text }) => {
-    gameManager.submitDiscussionMessage(roomId, socket.id, text);
+  socket.on("discussion:send", ({ roomId, text, asSocketId }) => {
+    const actingId = getActingSocketId(socket, roomId, asSocketId);
+    gameManager.submitDiscussionMessage(roomId, actingId, text);
   });
 
   // Host Skip Discussion to Voting
@@ -455,12 +499,14 @@ io.on("connection", (socket) => {
   });
 
   // Submit Vote
-  socket.on("vote:submit", ({ roomId, targetSocketId }) => {
-    gameManager.castVote(roomId, socket.id, targetSocketId);
+  socket.on("vote:submit", ({ roomId, targetSocketId, asSocketId }) => {
+    const actingId = getActingSocketId(socket, roomId, asSocketId);
+    gameManager.castVote(roomId, actingId, targetSocketId);
   });
 
   // Submit Mr. White Guess (Undercover)
-  socket.on("mrwhite:guess_submit", ({ roomId, guessText }) => {
+  socket.on("mrwhite:guess_submit", ({ roomId, guessText, asSocketId }) => {
+    const actingId = getActingSocketId(socket, roomId, asSocketId);
     gameManager.submitMrWhiteGuess(roomId, guessText);
   });
 
@@ -469,12 +515,14 @@ io.on("connection", (socket) => {
     gameManager.startSpyfallAccusation(roomId, socket.id, targetSocketId);
   });
 
-  socket.on("spyfall:vote", ({ roomId, isAgree }) => {
-    gameManager.castSpyfallAccusationVote(roomId, socket.id, isAgree);
+  socket.on("spyfall:vote", ({ roomId, isAgree, asSocketId }) => {
+    const actingId = getActingSocketId(socket, roomId, asSocketId);
+    gameManager.castSpyfallAccusationVote(roomId, actingId, isAgree);
   });
 
-  socket.on("spyfall:spy_guess", ({ roomId, locationName }) => {
-    gameManager.submitSpyfallLocationGuess(roomId, socket.id, locationName);
+  socket.on("spyfall:spy_guess", ({ roomId, locationName, asSocketId }) => {
+    const actingId = getActingSocketId(socket, roomId, asSocketId);
+    gameManager.submitSpyfallLocationGuess(roomId, actingId, locationName);
   });
 
   socket.on("spyfall:skip_inquiry", ({ roomId }) => {
@@ -482,16 +530,19 @@ io.on("connection", (socket) => {
   });
 
   // Werewolf Actions
-  socket.on("werewolf:seer_peek", ({ roomId, targetSocketId }) => {
-    gameManager.werewolfSeerPeek(roomId, socket.id, targetSocketId);
+  socket.on("werewolf:seer_peek", ({ roomId, targetSocketId, asSocketId }) => {
+    const actingId = getActingSocketId(socket, roomId, asSocketId);
+    gameManager.werewolfSeerPeek(roomId, actingId, targetSocketId);
   });
 
-  socket.on("werewolf:doctor_protect", ({ roomId, targetSocketId }) => {
-    gameManager.werewolfDoctorProtect(roomId, socket.id, targetSocketId);
+  socket.on("werewolf:doctor_protect", ({ roomId, targetSocketId, asSocketId }) => {
+    const actingId = getActingSocketId(socket, roomId, asSocketId);
+    gameManager.werewolfDoctorProtect(roomId, actingId, targetSocketId);
   });
 
-  socket.on("werewolf:wolf_vote", ({ roomId, targetSocketId }) => {
-    gameManager.werewolfVote(roomId, socket.id, targetSocketId);
+  socket.on("werewolf:wolf_vote", ({ roomId, targetSocketId, asSocketId }) => {
+    const actingId = getActingSocketId(socket, roomId, asSocketId);
+    gameManager.werewolfVote(roomId, actingId, targetSocketId);
   });
 
   socket.on("werewolf:skip_night", ({ roomId }) => {
@@ -507,16 +558,19 @@ io.on("connection", (socket) => {
   });
 
   // Draw & Guess Actions
-  socket.on("draw:select_word", ({ roomId, word, category }) => {
-    gameManager.drawSelectWord(roomId, socket.id, word, category);
+  socket.on("draw:select_word", ({ roomId, word, category, asSocketId }) => {
+    const actingId = getActingSocketId(socket, roomId, asSocketId);
+    gameManager.drawSelectWord(roomId, actingId, word, category);
   });
 
-  socket.on("draw:stroke", ({ roomId, strokeData }) => {
-    gameManager.drawStroke(roomId, socket.id, strokeData);
+  socket.on("draw:stroke", ({ roomId, strokeData, asSocketId }) => {
+    const actingId = getActingSocketId(socket, roomId, asSocketId);
+    gameManager.drawStroke(roomId, actingId, strokeData);
   });
 
-  socket.on("draw:clear", ({ roomId }) => {
-    gameManager.drawClearCanvas(roomId, socket.id);
+  socket.on("draw:clear", ({ roomId, asSocketId }) => {
+    const actingId = getActingSocketId(socket, roomId, asSocketId);
+    gameManager.drawClearCanvas(roomId, actingId);
   });
 
   socket.on("draw:skip_turn", ({ roomId }) => {
@@ -527,20 +581,23 @@ io.on("connection", (socket) => {
     gameManager.drawSkipSummary(roomId, socket.id);
   });
 
-  socket.on("draw:guess", ({ roomId, text }) => {
-    gameManager.submitDiscussionMessage(roomId, socket.id, text);
+  socket.on("draw:guess", ({ roomId, text, asSocketId }) => {
+    const actingId = getActingSocketId(socket, roomId, asSocketId);
+    gameManager.submitDiscussionMessage(roomId, actingId, text);
   });
 
   // Remi Actions
-  socket.on("remi:draw_card", ({ roomId, source }) => {
-    const result = gameManager.remiDrawCard(roomId, socket.id, source);
+  socket.on("remi:draw_card", ({ roomId, source, asSocketId }) => {
+    const actingId = getActingSocketId(socket, roomId, asSocketId);
+    const result = gameManager.remiDrawCard(roomId, actingId, source);
     if (result && result.error) {
       socket.emit("error:message", result.error);
     }
   });
 
-  socket.on("remi:discard_card", ({ roomId, cardId, isDeclareWin }) => {
-    const result = gameManager.remiDiscardCard(roomId, socket.id, cardId, isDeclareWin);
+  socket.on("remi:discard_card", ({ roomId, cardId, isDeclareWin, asSocketId }) => {
+    const actingId = getActingSocketId(socket, roomId, asSocketId);
+    const result = gameManager.remiDiscardCard(roomId, actingId, cardId, isDeclareWin);
     if (result && result.error) {
       socket.emit("error:message", result.error);
     }
@@ -551,29 +608,33 @@ io.on("connection", (socket) => {
   });
 
   // UNO Actions
-  socket.on("uno:play_card", ({ roomId, cardId, chosenColor }) => {
-    const result = gameManager.unoPlayCard(roomId, socket.id, cardId, chosenColor);
+  socket.on("uno:play_card", ({ roomId, cardId, chosenColor, asSocketId }) => {
+    const actingId = getActingSocketId(socket, roomId, asSocketId);
+    const result = gameManager.unoPlayCard(roomId, actingId, cardId, chosenColor);
     if (result && result.error) {
       socket.emit("error:message", result.error);
     }
   });
 
-  socket.on("uno:draw_card", ({ roomId }) => {
-    const result = gameManager.unoDrawCard(roomId, socket.id);
+  socket.on("uno:draw_card", ({ roomId, asSocketId }) => {
+    const actingId = getActingSocketId(socket, roomId, asSocketId);
+    const result = gameManager.unoDrawCard(roomId, actingId);
     if (result && result.error) {
       socket.emit("error:message", result.error);
     }
   });
 
-  socket.on("uno:pass_turn", ({ roomId }) => {
-    const result = gameManager.unoPassTurn(roomId, socket.id);
+  socket.on("uno:pass_turn", ({ roomId, asSocketId }) => {
+    const actingId = getActingSocketId(socket, roomId, asSocketId);
+    const result = gameManager.unoPassTurn(roomId, actingId);
     if (result && result.error) {
       socket.emit("error:message", result.error);
     }
   });
 
-  socket.on("uno:call_uno", ({ roomId }) => {
-    const result = gameManager.unoCallUno(roomId, socket.id);
+  socket.on("uno:call_uno", ({ roomId, asSocketId }) => {
+    const actingId = getActingSocketId(socket, roomId, asSocketId);
+    const result = gameManager.unoCallUno(roomId, actingId);
     if (result && result.error) {
       socket.emit("error:message", result.error);
     }
@@ -586,51 +647,61 @@ io.on("connection", (socket) => {
   // Impostor Actions
   socket.on("impostor:pos", (posData) => {
     if (!posData || !posData.roomId) return;
-    gameManager.impostorUpdatePosition(posData.roomId, socket.id, posData);
+    const actingId = posData.socketId || socket.id;
+    gameManager.impostorUpdatePosition(posData.roomId, actingId, posData);
   });
 
-  socket.on("impostor:move", ({ roomId, targetRoomId }) => {
-    const result = gameManager.impostorMoveRoom(roomId, socket.id, targetRoomId);
+  socket.on("impostor:move", ({ roomId, targetRoomId, asSocketId }) => {
+    const actingId = getActingSocketId(socket, roomId, asSocketId);
+    const result = gameManager.impostorMoveRoom(roomId, actingId, targetRoomId);
     if (result && result.error) socket.emit("error:message", result.error);
   });
 
-  socket.on("impostor:vent", ({ roomId, targetRoomId }) => {
-    const result = gameManager.impostorVentTravel(roomId, socket.id, targetRoomId);
+  socket.on("impostor:vent", ({ roomId, targetRoomId, asSocketId }) => {
+    const actingId = getActingSocketId(socket, roomId, asSocketId);
+    const result = gameManager.impostorVentTravel(roomId, actingId, targetRoomId);
     if (result && result.error) socket.emit("error:message", result.error);
   });
 
-  socket.on("impostor:task_complete", ({ roomId, taskId }) => {
-    const result = gameManager.impostorCompleteTask(roomId, socket.id, taskId);
+  socket.on("impostor:task_complete", ({ roomId, taskId, asSocketId }) => {
+    const actingId = getActingSocketId(socket, roomId, asSocketId);
+    const result = gameManager.impostorCompleteTask(roomId, actingId, taskId);
     if (result && result.error) socket.emit("error:message", result.error);
   });
 
-  socket.on("impostor:kill", ({ roomId, targetSocketId }) => {
-    const result = gameManager.impostorKill(roomId, socket.id, targetSocketId);
+  socket.on("impostor:kill", ({ roomId, targetSocketId, asSocketId }) => {
+    const actingId = getActingSocketId(socket, roomId, asSocketId);
+    const result = gameManager.impostorKill(roomId, actingId, targetSocketId);
     if (result && result.error) socket.emit("error:message", result.error);
   });
 
-  socket.on("impostor:sabotage", ({ roomId, sabotageType }) => {
-    const result = gameManager.impostorSabotage(roomId, socket.id, sabotageType);
+  socket.on("impostor:sabotage", ({ roomId, sabotageType, asSocketId }) => {
+    const actingId = getActingSocketId(socket, roomId, asSocketId);
+    const result = gameManager.impostorSabotage(roomId, actingId, sabotageType);
     if (result && result.error) socket.emit("error:message", result.error);
   });
 
-  socket.on("impostor:fix_sabotage", ({ roomId }) => {
-    const result = gameManager.impostorFixSabotage(roomId, socket.id);
+  socket.on("impostor:fix_sabotage", ({ roomId, asSocketId }) => {
+    const actingId = getActingSocketId(socket, roomId, asSocketId);
+    const result = gameManager.impostorFixSabotage(roomId, actingId);
     if (result && result.error) socket.emit("error:message", result.error);
   });
 
-  socket.on("impostor:report", ({ roomId, bodyId }) => {
-    const result = gameManager.impostorReportBody(roomId, socket.id, bodyId);
+  socket.on("impostor:report", ({ roomId, bodyId, asSocketId }) => {
+    const actingId = getActingSocketId(socket, roomId, asSocketId);
+    const result = gameManager.impostorReportBody(roomId, actingId, bodyId);
     if (result && result.error) socket.emit("error:message", result.error);
   });
 
-  socket.on("impostor:emergency", ({ roomId }) => {
-    const result = gameManager.impostorEmergencyMeeting(roomId, socket.id);
+  socket.on("impostor:emergency", ({ roomId, asSocketId }) => {
+    const actingId = getActingSocketId(socket, roomId, asSocketId);
+    const result = gameManager.impostorEmergencyMeeting(roomId, actingId);
     if (result && result.error) socket.emit("error:message", result.error);
   });
 
-  socket.on("impostor:vote", ({ roomId, targetSocketId }) => {
-    const result = gameManager.impostorCastVote(roomId, socket.id, targetSocketId);
+  socket.on("impostor:vote", ({ roomId, targetSocketId, asSocketId }) => {
+    const actingId = getActingSocketId(socket, roomId, asSocketId);
+    const result = gameManager.impostorCastVote(roomId, actingId, targetSocketId);
     if (result && result.error) socket.emit("error:message", result.error);
   });
 

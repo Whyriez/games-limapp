@@ -398,7 +398,7 @@ export default function LandingHub({
 
       {/* QUICK NAME ENTRY MODAL IF CLICKED WITHOUT NICKNAME */}
       {pendingGameModal && typeof document !== "undefined" && createPortal(
-        <div className="fixed inset-0 z-[999] min-h-[100dvh] w-screen flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-[999] min-h-[100dvh] w-full flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
           <div className="clay-card p-6 sm:p-7 max-w-md w-full m-auto bg-white border-2 border-[#FFA012] shadow-2xl rounded-3xl space-y-5 animate-pop-spring">
             <div className="flex items-center justify-between pb-2 border-b border-[#F6E6D0]">
               <div className="flex items-center gap-2.5">
@@ -479,7 +479,7 @@ export default function LandingHub({
             </form>
           </div>
         </div>,
-        document.body
+        document.fullscreenElement || document.body
       )}
     </div>
   );

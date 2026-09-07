@@ -334,32 +334,38 @@ export class GameManager {
     };
   }
 
-  addBot(roomId, socketId) {
+  addBot(roomId, socketId, count = 1) {
     const room = this.rooms.get(roomId);
     if (!room) return { error: "Room tidak ditemukan" };
     if (room.status !== "LOBBY") return { error: "Hanya dapat menambah bot saat di Lobby" };
     if (room.hostId !== socketId) return { error: "Hanya Host yang dapat menambah bot" };
 
     const BOT_NAMES = [
-      "Bot Budi", "Bot Siti", "Bot Agus", "Bot Dewi", "Bot Joko",
-      "Bot Rina", "Bot Reza", "Bot Maya", "Bot Eko", "Bot Wati",
-      "Bot Aldo", "Bot Bella", "Bot Citra", "Bot Dimas", "Bot Fajar"
+      "🤖 Bot Budi", "🤖 Bot Siti", "🤖 Bot Agus", "🤖 Bot Dewi", "🤖 Bot Joko",
+      "🤖 Bot Rina", "🤖 Bot Reza", "🤖 Bot Maya", "🤖 Bot Eko", "🤖 Bot Wati",
+      "🤖 Bot Aldo", "🤖 Bot Bella", "🤖 Bot Citra", "🤖 Bot Dimas", "🤖 Bot Fajar"
     ];
-    const existingBotCount = room.players.filter((p) => p.isBot).length;
-    const botName = BOT_NAMES[existingBotCount % BOT_NAMES.length] || `Bot ${existingBotCount + 1}`;
-    const botId = `bot_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
 
-    room.players.push({
-      socketId: botId,
-      playerId: botId,
-      name: botName,
-      isAlive: true,
-      isSpectator: false,
-      connected: true,
-      isBot: true,
-      role: null,
-      word: null,
-    });
+    const toAdd = Math.min(Math.max(1, count), 16 - room.players.length);
+    if (toAdd <= 0) return { error: "Ruangan sudah penuh (Maks. 16 pemain)" };
+
+    for (let i = 0; i < toAdd; i++) {
+      const existingNames = new Set(room.players.map((p) => p.name));
+      const availableName = BOT_NAMES.find((n) => !existingNames.has(n)) || `🤖 Bot ${room.players.length + 1}`;
+      const botId = `bot_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+
+      room.players.push({
+        socketId: botId,
+        playerId: botId,
+        name: availableName,
+        isAlive: true,
+        isSpectator: false,
+        connected: true,
+        isBot: true,
+        role: null,
+        word: null,
+      });
+    }
 
     if (room.gameType === "undercover" && room.settings?.autoBalance !== false) {
       const activeCount = room.players.filter((p) => p.connected).length;
@@ -402,6 +408,67 @@ export class GameManager {
     return { success: true, room: this.getSanitizedRoom(roomId) };
   }
 
+  removeAllBots(roomId, socketId) {
+    const room = this.rooms.get(roomId);
+    if (!room) return { error: "Room tidak ditemukan" };
+    if (room.status !== "LOBBY") return { error: "Hanya dapat menghapus bot saat di Lobby" };
+    if (room.hostId !== socketId) return { error: "Hanya Host yang dapat menghapus bot" };
+
+    room.players = room.players.filter((p) => !p.isBot);
+
+    if (room.gameType === "undercover" && room.settings?.autoBalance !== false) {
+      const activeCount = room.players.filter((p) => p.connected).length;
+      const autoRoles = calculateAutoRoleDistribution(activeCount);
+      room.settings = {
+        ...room.settings,
+        undercoverCount: autoRoles.undercoverCount,
+        mrWhiteCount: autoRoles.mrWhiteCount,
+      };
+      this.io.to(roomId).emit("room:settings_updated", room.settings);
+    }
+
+    this.io.to(roomId).emit("room:updated", this.getSanitizedRoom(roomId));
+    return { success: true, room: this.getSanitizedRoom(roomId) };
+  }
+
+  getDevPuppetStates(roomId, hostSocketId) {
+    const room = this.rooms.get(roomId);
+    if (!room) return null;
+    const isDev = process.env.NODE_ENV !== "production" || process.env.DEV_MODE === "true";
+    if (!isDev) return null;
+
+    const puppets = {};
+    for (const p of room.players) {
+      puppets[p.socketId] = {
+        socketId: p.socketId,
+        playerId: p.playerId,
+        name: p.name,
+        isBot: !!p.isBot,
+        isAlive: p.isAlive,
+        isGhost: !!p.isGhost,
+        role: p.role,
+        word: p.word,
+        cards: p.cards || (room.playerHands && room.playerHands[p.socketId]) || [],
+        tasks: p.tasks || [],
+        currentRoom: p.currentRoom || "cafeteria",
+        killCooldownEndsAt: p.killCooldownEndsAt || 0,
+      };
+    }
+    return puppets;
+  }
+
+  syncDevPuppetStates(roomId) {
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+    const isDev = process.env.NODE_ENV !== "production" || process.env.DEV_MODE === "true";
+    if (!isDev) return;
+
+    const states = this.getDevPuppetStates(roomId, room.hostId);
+    if (states && room.hostId) {
+      this.io.to(room.hostId).emit("dev:puppet_sync", states);
+    }
+  }
+
   startGame(roomId) {
     const room = this.rooms.get(roomId);
     if (!room) return { error: "Room tidak ditemukan" };
@@ -419,6 +486,7 @@ export class GameManager {
     if (handler && typeof handler.initGame === "function") {
       const result = handler.initGame(room, this.io, this);
       this.io.to(roomId).emit("room:updated", this.getSanitizedRoom(roomId));
+      this.syncDevPuppetStates(roomId);
       return result;
     }
 
@@ -934,82 +1002,6 @@ export class GameManager {
     if (handler && typeof handler.skipDiscussionToVoting === "function") {
       return handler.skipDiscussionToVoting(room, socketId, this.io, this);
     }
-  }
-
-  addBot(roomId, socketId) {
-    const room = this.rooms.get(roomId);
-    if (!room || room.status !== "LOBBY") return { error: "Hanya bisa menambah bot di ruang tunggu (Lobby)" };
-    if (room.hostId !== socketId) return { error: "Hanya host yang dapat menambah bot" };
-    if (room.players.length >= 16) return { error: "Ruangan sudah penuh (Maks. 16 pemain)" };
-
-    const botNames = [
-      "🤖 Bot Budi",
-      "🤖 Bot Siti",
-      "🤖 Bot Santai",
-      "🤖 Bot Jagoan",
-      "🤖 Bot Bayangan",
-      "🤖 Bot Cerdas",
-      "🤖 Bot Kancil",
-      "🤖 Bot Elang",
-    ];
-    const existingNames = new Set(room.players.map((p) => p.name));
-    const availableName = botNames.find((n) => !existingNames.has(n)) || `🤖 Bot ${room.players.length + 1}`;
-
-    const botId = `bot_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-    const botPlayer = {
-      socketId: botId,
-      playerId: botId,
-      name: availableName,
-      isAlive: true,
-      connected: true,
-      role: null,
-      word: null,
-      isBot: true,
-    };
-
-    room.players.push(botPlayer);
-
-    if (room.gameType === "undercover") {
-      const activeCount = room.players.filter((p) => p.connected).length;
-      const autoRoles = calculateAutoRoleDistribution(activeCount);
-      room.settings = {
-        ...room.settings,
-        autoBalance: true,
-        undercoverCount: autoRoles.undercoverCount,
-        mrWhiteCount: autoRoles.mrWhiteCount,
-      };
-      this.io.to(roomId).emit("room:settings_updated", room.settings);
-    }
-
-    this.io.to(roomId).emit("room:updated", this.getSanitizedRoom(roomId));
-    return { success: true };
-  }
-
-  removeBot(roomId, socketId, botSocketId) {
-    const room = this.rooms.get(roomId);
-    if (!room || room.status !== "LOBBY") return { error: "Hanya bisa menghapus bot di ruang tunggu" };
-    if (room.hostId !== socketId) return { error: "Hanya host yang dapat menghapus bot" };
-
-    const index = room.players.findIndex((p) => p.socketId === botSocketId && p.isBot);
-    if (index !== -1) {
-      room.players.splice(index, 1);
-
-      if (room.gameType === "undercover") {
-        const activeCount = room.players.filter((p) => p.connected).length || 3;
-        const autoRoles = calculateAutoRoleDistribution(activeCount);
-        room.settings = {
-          ...room.settings,
-          autoBalance: true,
-          undercoverCount: autoRoles.undercoverCount,
-          mrWhiteCount: autoRoles.mrWhiteCount,
-        };
-        this.io.to(roomId).emit("room:settings_updated", room.settings);
-      }
-
-      this.io.to(roomId).emit("room:updated", this.getSanitizedRoom(roomId));
-      return { success: true };
-    }
-    return { error: "Bot tidak ditemukan" };
   }
 
 

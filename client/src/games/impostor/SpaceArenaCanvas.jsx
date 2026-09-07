@@ -30,6 +30,7 @@ export default function SpaceArenaCanvas({
   joystickVector,
   onProximityChange,
   activeSabotage,
+  className = "w-full h-full min-h-[380px] sm:min-h-[460px] rounded-3xl block shadow-inner bg-[#0B0D1B] touch-none cursor-crosshair",
 }) {
   const canvasRef = useRef(null);
   const animationFrameRef = useRef(null);
@@ -1322,7 +1323,7 @@ export default function SpaceArenaCanvas({
     <canvas
       ref={canvasRef}
       onPointerDown={handleCanvasPointerDown}
-      className="w-full h-[56vh] min-h-[380px] max-h-[580px] rounded-3xl block shadow-inner bg-[#0B0D1B] touch-none cursor-crosshair"
+      className={className}
     />
   );
 }

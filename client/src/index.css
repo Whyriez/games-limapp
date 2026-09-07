@@ -23,6 +23,11 @@
   --color-pastel-green: #4DD97B;
 }
 
+html {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
 body {
   background-color: #FFF3DE;
   background-image: 
@@ -36,6 +41,8 @@ body {
   margin: 0;
   padding: 0;
   min-height: 100dvh;
+  overflow-x: hidden;
+  max-width: 100%;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -318,4 +325,44 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #D4BCA3;
+}
+
+/* Dedicated Game Canvas & Fullscreen Arena Styles */
+.game-fullscreen-container {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100dvh !important;
+  max-width: 100% !important;
+  max-height: 100dvh !important;
+  z-index: 50 !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Forced Landscape Mode (for mobile portrait rotation simulation) */
+.forced-landscape-mode {
+  transform: rotate(90deg) !important;
+  transform-origin: center center !important;
+  width: 100dvh !important;
+  height: 100dvw !important;
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  translate: -50% -50% !important;
+  z-index: 9999 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Safe area insets for notched phones in landscape */
+.safe-landscape-padding {
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+  padding-top: max(0.5rem, env(safe-area-inset-top));
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
 }
